@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Search, ChevronDown, ChevronUp, Truck, CheckCircle, Clock, XCircle, MapPin } from 'lucide-react';
+import { Package, Search, ChevronDown, ChevronUp, Truck, CheckCircle, Clock, XCircle, MapPin, ExternalLink } from 'lucide-react';
 
 interface OrderItem {
   id: string;
@@ -119,8 +119,7 @@ export default function CustomerOrders() {
             return (
               <div key={order.paymentId} style={{ background: '#fff', border: '1px solid #F0EBE5', borderRadius: '12px', overflow: 'hidden' }}>
                 <div
-                  onClick={() => setExpandedOrder(isExpanded ? null : order.paymentId)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', cursor: 'pointer' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px' }}
                 >
                   <img src={order.items[0].image} alt="" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -130,14 +129,38 @@ export default function CustomerOrders() {
                       <span>{order.date}</span>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700, color: '#1A1A1A' }}>{order.total}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', marginTop: '4px' }}>
-                      {statusIcon(order.status)}
-                      <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '0.65rem', fontWeight: 600, background: sc.bg, color: sc.color }}>{order.status}</span>
+                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#1A1A1A' }}>{order.total}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                        {statusIcon(order.status)}
+                        <span style={{ padding: '3px 8px', borderRadius: '10px', fontSize: '0.65rem', fontWeight: 600, background: sc.bg, color: sc.color }}>{order.status}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <Link
+                        to={`/dashboard/orders/${order.paymentId}`}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 14px',
+                          background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '8px',
+                          fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', cursor: 'pointer',
+                          whiteSpace: 'nowrap', fontFamily: 'inherit'
+                        }}
+                      >
+                        View Order <ExternalLink size={12} />
+                      </Link>
+                      <button
+                        onClick={() => setExpandedOrder(isExpanded ? null : order.paymentId)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 14px',
+                          background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: '8px',
+                          fontSize: '0.7rem', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit'
+                        }}
+                      >
+                        {isExpanded ? 'Less' : 'Quick View'} {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      </button>
                     </div>
                   </div>
-                  {isExpanded ? <ChevronUp size={18} color="#999" /> : <ChevronDown size={18} color="#999" />}
                 </div>
 
                 {isExpanded && (

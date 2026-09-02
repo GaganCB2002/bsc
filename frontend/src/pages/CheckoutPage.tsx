@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import { useCart } from '../context/CartContext';
 import { showToast } from '../components/Toast';
-import { CreditCard, Smartphone, QrCode, Banknote, ChevronRight, Check, Copy, ShieldCheck, Loader2, Tag, X, Ticket, Gift } from 'lucide-react';
+import { CreditCard, Smartphone, QrCode, Banknote, ChevronRight, Check, Copy, ShieldCheck, Loader2, Tag, X, Ticket, Gift, Download, FileText } from 'lucide-react';
 
 type PaymentMethod = 'razorpay' | 'upi' | 'qr' | 'cod';
 type CheckoutStep = 'payment' | 'verify' | 'success';
@@ -58,6 +58,18 @@ export default function CheckoutPage() {
   const [copied, setCopied] = useState(false);
   const [couponInput, setCouponInput] = useState('');
   const [showCouponList, setShowCouponList] = useState(false);
+  const [animPhase, setAnimPhase] = useState<'idle' | 'coin' | 'verifying' | 'receipt' | 'done'>('idle');
+  const receiptRef = useRef<HTMLDivElement>(null);
+
+  const sparkles = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) => ({
+      top: `${20 + (((i * 17 + 7) % 60))}%`,
+      left: `${10 + (((i * 23 + 3) % 80))}%`,
+      duration: `${0.8 + (((i * 11) % 40)) / 100}s`,
+      delay: `${i * 0.08}s`,
+      color: ['#F59E0B', '#B91C1C', '#16a34a', '#3b82f6'][i % 4],
+    })),
+    []);
 
   // Auto-apply best coupon on first render via lazy state init
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(() => {
@@ -103,22 +115,34 @@ export default function CheckoutPage() {
 
   const handleVerifyPayment = () => {
     if (selectedMethod === 'cod') {
+      setAnimPhase('coin');
+      setTimeout(() => setAnimPhase('verifying'), 1500);
+      setTimeout(() => {
+        setAnimPhase('receipt');
+        clearCart();
+        showToast('success', `Order confirmed! Payment ID: ${paymentId}`);
+      }, 3500);
+      setTimeout(() => setAnimPhase('done'), 5000);
       setStep('success');
-      clearCart();
-      showToast('success', `Order placed! Payment ID: ${paymentId}`);
       return;
     }
     if (!verifyInput.trim()) {
       showToast('error', 'Please enter the UPI Transaction ID or Reference Number');
       return;
     }
-    setLoading(true);
+    setAnimPhase('coin');
+    setTimeout(() => setAnimPhase('verifying'), 1500);
     setTimeout(() => {
-      setLoading(false);
-      setStep('success');
+      setAnimPhase('receipt');
       clearCart();
       showToast('success', `Payment verified! Order confirmed: ${paymentId}`);
-    }, 2000);
+    }, 3500);
+    setTimeout(() => setAnimPhase('done'), 5000);
+    setStep('success');
+  };
+
+  const printReceipt = () => {
+    window.print();
   };
 
   const copyPaymentId = () => {
@@ -171,23 +195,173 @@ export default function CheckoutPage() {
         </div>
 
         {step === 'success' ? (
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '48px', textAlign: 'center' }}>
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-              <Check size={40} color="#16A34A" />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1A1A2E', marginBottom: '8px' }}>Order Confirmed!</h2>
-            <p style={{ color: '#64748B', marginBottom: '16px' }}>Your order has been placed successfully.</p>
-            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '16px', display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-              <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Payment ID:</span>
-              <span style={{ fontWeight: 700, color: '#B91C1C', fontSize: '0.95rem' }}>{paymentId}</span>
-              <button onClick={copyPaymentId} style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? '#16A34A' : '#64748B' }}>
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-              </button>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <Link to="/dashboard/orders" style={{ padding: '12px 28px', background: '#B91C1C', color: '#fff', textDecoration: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem' }}>View Orders</Link>
-              <Link to="/" style={{ padding: '12px 28px', background: '#F1F5F9', color: '#1A1A2E', textDecoration: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem' }}>Continue Shopping</Link>
-            </div>
+          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '48px', textAlign: 'center', overflow: 'hidden', position: 'relative' }}>
+
+            {/* Phase 1: Coin Spin Animation */}
+            {animPhase === 'coin' && (
+              <div style={{ animation: 'fadeInUp 0.5s ease' }}>
+                <div className="coin-container" style={{ width: '120px', height: '120px', margin: '0 auto 32px', perspective: '600px' }}>
+                  <div className="coin" style={{
+                    width: '120px', height: '120px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #F59E0B 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 8px 32px rgba(245,158,11,0.4), inset 0 -4px 8px rgba(0,0,0,0.1)',
+                    animation: 'coinSpin 1.5s ease-in-out', position: 'relative',
+                    border: '4px solid #FCD34D'
+                  }}>
+                    <span style={{ fontSize: '2rem', fontWeight: 900, color: '#92400E', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>₹</span>
+                    <div style={{ position: 'absolute', inset: '6px', borderRadius: '50%', border: '2px dashed rgba(146,64,14,0.3)' }} />
+                  </div>
+                </div>
+                <div className="sparkle-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                  {sparkles.map((s, i) => (
+                    <div key={i} className="sparkle" style={{
+                      position: 'absolute', width: '6px', height: '6px', borderRadius: '50%',
+                      background: s.color, top: s.top, left: s.left,
+                      animation: `sparkle ${s.duration} ease ${s.delay} forwards`, opacity: 0
+                    }} />
+                  ))}
+                </div>
+                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#1E293B', marginBottom: '8px' }}>Processing Payment</h2>
+                <p style={{ color: '#64748B', fontSize: '0.9rem' }}>Please wait while we confirm your payment...</p>
+                <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center', gap: '4px' }}>
+                  {[0,1,2].map(i => <div key={i} className="bounce-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#B91C1C', animation: `bounce 1.2s ease ${i * 0.15}s infinite` }} />)}
+                </div>
+              </div>
+            )}
+
+            {/* Phase 2: Payment Verifying */}
+            {animPhase === 'verifying' && (
+              <div style={{ animation: 'fadeInUp 0.5s ease' }}>
+                <div style={{ width: '100px', height: '100px', margin: '0 auto 32px', position: 'relative' }}>
+                  <div style={{
+                    width: '100px', height: '100px', borderRadius: '50%', border: '4px solid #E2E8F0',
+                    position: 'relative', overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      position: 'absolute', inset: 0, borderRadius: '50%',
+                      border: '4px solid transparent', borderTopColor: '#16a34a',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <ShieldCheck size={36} color="#16a34a" className="pulse-icon" />
+                    </div>
+                  </div>
+                  <div className="ripple" style={{
+                    position: 'absolute', inset: '-10px', borderRadius: '50%', border: '2px solid #16a34a',
+                    animation: 'ripple 1.5s ease-out infinite', opacity: 0
+                  }} />
+                </div>
+                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#1E293B', marginBottom: '8px' }}>Verifying Payment</h2>
+                <p style={{ color: '#64748B', fontSize: '0.9rem' }}>Checking payment ID: <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#B91C1C' }}>{paymentId}</span></p>
+                <div style={{ marginTop: '20px', padding: '12px 20px', background: '#F0FDF4', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid #BBF7D0' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a', animation: 'pulse 1.5s ease infinite' }} />
+                  <span style={{ fontSize: '0.8rem', color: '#166534', fontWeight: 500 }}>Secure verification in progress...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Phase 3: Receipt */}
+            {animPhase === 'receipt' && (
+              <div style={{ animation: 'fadeInUp 0.5s ease' }}>
+                <div ref={receiptRef} className="receipt-container" style={{
+                  maxWidth: '380px', margin: '0 auto', background: '#fff', borderRadius: '16px',
+                  border: '2px dashed #E2E8F0', padding: '32px 24px', textAlign: 'left',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)', position: 'relative', overflow: 'hidden'
+                }}>
+                  <div style={{ position: 'absolute', top: '-1px', left: '50%', transform: 'translateX(-50%)', width: '40px', height: '20px', background: '#F8FAFC', borderRadius: '0 0 20px 20px', border: '2px dashed #E2E8F0', borderTop: 'none' }} />
+                  <div style={{ position: 'absolute', bottom: '-1px', left: '50%', transform: 'translateX(-50%)', width: '40px', height: '20px', background: '#F8FAFC', borderRadius: '20px 20px 0 0', border: '2px dashed #E2E8F0', borderBottom: 'none' }} />
+
+                  <div style={{ textAlign: 'center', marginBottom: '20px', paddingTop: '8px' }}>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#B91C1C', marginBottom: '4px' }}>BSC Exclusive</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E293B' }}>Payment Receipt</div>
+                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '4px' }}>{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+
+                  <div style={{ borderTop: '2px dashed #E2E8F0', margin: '0 -24px', padding: '0 24px' }} />
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '20px 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Payment ID</span>
+                      <span style={{ fontSize: '0.8rem', fontFamily: 'monospace', fontWeight: 700, color: '#B91C1C' }}>{paymentId}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Payment Method</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1E293B' }}>{selectedMethod === 'cod' ? 'Cash on Delivery' : selectedMethod === 'upi' ? 'UPI Pay' : selectedMethod === 'qr' ? 'QR Code' : 'Razorpay'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Items</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1E293B' }}>{totalItems}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Subtotal</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 500, color: '#1E293B' }}>₹{totalPrice.toLocaleString('en-IN')}</span>
+                    </div>
+                    {discount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#16a34a' }}>Discount ({appliedCoupon?.code})</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#16a34a' }}>-₹{discount.toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Shipping</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 500, color: effectiveShipping === 0 ? '#16a34a' : '#1E293B' }}>{effectiveShipping === 0 ? 'Free' : `₹${shipping}`}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: '2px dashed #E2E8F0', margin: '0 -24px', padding: '0 24px' }} />
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', padding: '12px', background: '#FEF3C7', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>Total Paid</span>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#B91C1C' }}>₹{total.toLocaleString('en-IN')}</span>
+                  </div>
+
+                  <div style={{ textAlign: 'center', marginTop: '20px', padding: '10px', background: '#F0FDF4', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600 }}>✓ Payment Verified & Confirmed</span>
+                  </div>
+
+                  <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.7rem', color: '#94A3B8' }}>
+                    This is a digitally generated receipt.<br />Thank you for shopping with BSC Exclusive!
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '24px' }}>
+                  <button onClick={printReceipt} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 24px', background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <Download size={16} /> Download Receipt
+                  </button>
+                  <Link to="/dashboard/orders" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 24px', background: '#F1F5F9', color: '#1E293B', textDecoration: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem' }}>
+                    <FileText size={16} /> View Orders
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Phase 4: Done - Final */}
+            {animPhase === 'done' && (
+              <div style={{ animation: 'fadeInUp 0.5s ease' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', animation: 'scaleIn 0.4s ease' }}>
+                  <Check size={40} color="#16A34A" strokeWidth={3} />
+                </div>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1A1A2E', marginBottom: '8px' }}>Order Confirmed!</h2>
+                <p style={{ color: '#64748B', marginBottom: '16px', fontSize: '0.9rem' }}>Your order has been placed successfully. We'll send you tracking details soon.</p>
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '16px', display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Payment ID:</span>
+                  <span style={{ fontWeight: 700, color: '#B91C1C', fontSize: '0.95rem', fontFamily: 'monospace' }}>{paymentId}</span>
+                  <button onClick={copyPaymentId} style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? '#16A34A' : '#64748B' }}>
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button onClick={printReceipt} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 28px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <Download size={16} /> Download Receipt
+                  </button>
+                  <Link to="/dashboard/orders" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 28px', background: '#B91C1C', color: '#fff', textDecoration: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem' }}>
+                    <FileText size={16} /> View Orders
+                  </Link>
+                  <Link to="/" style={{ padding: '12px 28px', background: '#F1F5F9', color: '#1A1A2E', textDecoration: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem' }}>Continue Shopping</Link>
+                </div>
+              </div>
+            )}
           </div>
         ) : step === 'verify' ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px' }}>
@@ -447,6 +621,54 @@ export default function CheckoutPage() {
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes coinSpin {
+          0% { transform: rotateY(0deg) scale(0.5); opacity: 0; }
+          30% { transform: rotateY(180deg) scale(1.2); opacity: 1; }
+          60% { transform: rotateY(360deg) scale(1); }
+          80% { transform: rotateY(360deg) scale(1.05); }
+          100% { transform: rotateY(360deg) scale(1); }
+        }
+        @keyframes sparkle {
+          0% { opacity: 0; transform: scale(0) translateY(0); }
+          50% { opacity: 1; transform: scale(1.5) translateY(-20px); }
+          100% { opacity: 0; transform: scale(0) translateY(-40px); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes ripple {
+          0% { transform: scale(0.8); opacity: 0.6; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-12px); }
+        }
+        @keyframes scaleIn {
+          from { transform: scale(0) rotate(-45deg); opacity: 0; }
+          to { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(60px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse-icon { animation: pulse 1.5s ease infinite; }
+        @media print {
+          .no-print { display: none !important; }
+          body { background: #fff !important; }
+          * { box-shadow: none !important; }
+        }
+      `}</style>
     </div>
   );
 }

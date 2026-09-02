@@ -15,6 +15,7 @@ import Cookies from './pages/Cookies';
 
 
 import AdminLayout from './layouts/AdminLayout';
+import CustomerLayout from './layouts/CustomerLayout';
 import Overview from './pages/admin/Overview';
 import Inventory from './pages/admin/Inventory';
 import Catalog from './pages/admin/Catalog';
@@ -27,6 +28,13 @@ import Settings from './pages/admin/Settings';
 import NewProduct from './pages/admin/NewProduct';
 import Coupons from './pages/admin/Coupons';
 import Products from './pages/admin/Products';
+
+import CustomerDashboard from './pages/customer/Dashboard';
+import CustomerOrders from './pages/customer/Orders';
+import OrderDetails from './pages/customer/OrderDetails';
+import CustomerWishlist from './pages/customer/Wishlist';
+import CustomerAddresses from './pages/customer/Addresses';
+import CustomerSettings from './pages/customer/Settings';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import ToastContainer from './components/Toast';
@@ -84,6 +92,16 @@ function App() {
         
         {/* Legacy Customer Route (redirecting to home instead of dashboard) */}
         <Route path="/customer" element={<Navigate to="/" replace />} />
+        
+        {/* Customer Dashboard Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerLayout /></ProtectedRoute>}>
+          <Route index element={<CustomerDashboard />} />
+          <Route path="orders" element={<CustomerOrders />} />
+          <Route path="orders/:id" element={<OrderDetails />} />
+          <Route path="wishlist" element={<CustomerWishlist />} />
+          <Route path="addresses" element={<CustomerAddresses />} />
+          <Route path="settings" element={<CustomerSettings />} />
+        </Route>
         
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
