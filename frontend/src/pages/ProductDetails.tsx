@@ -5,7 +5,7 @@ import { getProductById, getProductsByCategory } from '../data/mockProducts';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
-import { Truck, RotateCcw, ChevronLeft, ChevronRight, ShoppingBag, Star, Shield, Heart, ZoomIn, ZoomOut } from 'lucide-react';
+import { Truck, RotateCcw, ChevronLeft, ChevronRight, ShoppingBag, Star, Shield, Heart, ZoomIn, ZoomOut, Check, Package, Clock, Award } from 'lucide-react';
 import '../pages/LandingPage.css';
 
 export default function ProductDetails() {
@@ -14,7 +14,7 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [addedMessage, setAddedMessage] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'details' | 'care' | 'shipping'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'care' | 'shipping' | 'reviews'>('details');
   const [selectedImage, setSelectedImage] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const { addToCart } = useCart();
@@ -219,9 +219,23 @@ export default function ProductDetails() {
           </div>
           
           <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', paddingTop: '20px' }}>
-            <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#B91C1C', fontWeight: 600, marginBottom: '12px' }}>
-              {product.category}'s Collection
-            </span>
+            {/* Badges */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#B91C1C', fontWeight: 600, background: '#FEE2E2', padding: '3px 10px', borderRadius: '4px' }}>
+                {product.category}'s Collection
+              </span>
+              {product.isNew && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#fff', background: '#16a34a', padding: '3px 10px', borderRadius: '4px' }}>NEW</span>}
+              {product.isBestseller && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#fff', background: '#B91C1C', padding: '3px 10px', borderRadius: '4px' }}>BESTSELLER</span>}
+              {product.isSale && product.comparePrice && (
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#fff', background: '#F59E0B', padding: '3px 10px', borderRadius: '4px' }}>
+                  {Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}% OFF
+                </span>
+              )}
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, color: product.inStock ? '#16a34a' : '#DC2626', background: product.inStock ? '#DCFCE7' : '#FEE2E2', padding: '3px 10px', borderRadius: '4px' }}>
+                {product.inStock ? 'In Stock' : 'Out of Stock'}
+              </span>
+            </div>
+
             <h1 style={{ fontSize: '2rem', fontWeight: 400, marginBottom: '12px', lineHeight: 1.2, color: '#1E293B' }}>{product.name}</h1>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -229,18 +243,44 @@ export default function ProductDetails() {
                 {[1,2,3,4,5].map(i => <Star key={i} size={16} fill={i <= Math.round(product.rating) ? '#F59E0B' : '#E5E7EB'} color={i <= Math.round(product.rating) ? '#F59E0B' : '#E5E7EB'} />)}
               </div>
               <span style={{ fontSize: '0.85rem', color: '#64748B' }}>{product.rating} ({product.reviews} reviews)</span>
+              <span style={{ fontSize: '0.75rem', color: '#94A3B8', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px' }}>{product.subcategory}</span>
             </div>
             
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#B91C1C', marginBottom: '24px' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#B91C1C', marginBottom: '8px' }}>
               ₹{product.price.toLocaleString('en-IN')}
               {product.comparePrice && (
-                <span style={{ fontSize: '1rem', color: '#94A3B8', textDecoration: 'line-through', marginLeft: '12px', fontWeight: 400 }}>
-                  ₹{product.comparePrice.toLocaleString('en-IN')}
-                </span>
+                <>
+                  <span style={{ fontSize: '1rem', color: '#94A3B8', textDecoration: 'line-through', marginLeft: '12px', fontWeight: 400 }}>
+                    ₹{product.comparePrice.toLocaleString('en-IN')}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 600, marginLeft: '8px' }}>
+                    Save ₹{(product.comparePrice - product.price).toLocaleString('en-IN')}
+                  </span>
+                </>
               )}
             </div>
+            <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '20px' }}>Inclusive of all taxes. Free shipping on orders above ₹5,000.</p>
             
-            <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.8, marginBottom: '32px' }}>{product.description}</p>
+            <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.8, marginBottom: '24px' }}>{product.description}</p>
+
+            {/* Product Highlights */}
+            <div style={{ marginBottom: '24px', padding: '16px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #F0EBE5' }}>
+              <h4 style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1E293B', marginBottom: '10px' }}>Product Highlights</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {[
+                  { icon: <Award size={13} />, text: 'Authentic Handloom' },
+                  { icon: <Shield size={13} />, text: 'GI Tagged Silk' },
+                  { icon: <Package size={13} />, text: 'Premium Packaging' },
+                  { icon: <Check size={13} />, text: 'Quality Checked' },
+                  { icon: <Truck size={13} />, text: 'Insured Shipping' },
+                  { icon: <RotateCcw size={13} />, text: '7-Day Returns' },
+                ].map((h, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#64748B' }}>
+                    <span style={{ color: '#16a34a' }}>{h.icon}</span> {h.text}
+                  </div>
+                ))}
+              </div>
+            </div>
             
             <div style={{ marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -314,39 +354,138 @@ export default function ProductDetails() {
           </div>
         </div>
 
-        <div style={{ marginTop: '60px', display: 'flex', gap: '32px', borderBottom: '1px solid #E2E8F0', marginBottom: '32px' }}>
-          {(['details', 'care', 'shipping'] as const).map(tab => (
+        <div style={{ marginTop: '60px', display: 'flex', gap: '32px', borderBottom: '1px solid #E2E8F0', marginBottom: '32px', flexWrap: 'wrap' }}>
+          {(['details', 'care', 'shipping', 'reviews'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
               padding: '12px 4px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.9rem',
               fontWeight: activeTab === tab ? 600 : 400, color: activeTab === tab ? '#B91C1C' : '#64748B',
               borderBottom: activeTab === tab ? '2px solid #B91C1C' : '2px solid transparent'
             }}>
-              {tab === 'details' ? 'Product Details' : tab === 'care' ? 'Care Instructions' : 'Shipping Info'}
+              {tab === 'details' ? 'Product Details' : tab === 'care' ? 'Care Instructions' : tab === 'shipping' ? 'Shipping Info' : `Reviews (${product.reviews})`}
             </button>
           ))}
         </div>
 
         {activeTab === 'details' && (
           <div style={{ marginBottom: '60px', color: '#64748B', lineHeight: 1.8, fontSize: '0.9rem' }}>
-            <p>{product.description}</p>
-            <p style={{ marginTop: '16px' }}>This product is crafted with premium quality materials, designed for comfort and style. Each piece undergoes strict quality control to ensure the highest standards.</p>
+            <p style={{ marginBottom: '16px' }}>{product.description}</p>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B', marginBottom: '12px' }}>Specifications</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+              {[
+                { label: 'Category', value: product.category.charAt(0).toUpperCase() + product.category.slice(1) },
+                { label: 'Subcategory', value: product.subcategory },
+                { label: 'Material', value: 'Pure Silk' },
+                { label: 'Weave Type', value: 'Handloom' },
+                { label: 'Pattern', value: 'Traditional' },
+                { label: 'Occasion', value: product.tags[0]?.charAt(0).toUpperCase() + (product.tags[0]?.slice(1) || '') },
+                { label: 'Wash Care', value: 'Dry Clean Only' },
+                { label: 'Country of Origin', value: 'India' },
+              ].map((spec, i) => (
+                <div key={i} style={{ display: 'flex', gap: '8px', padding: '8px 12px', background: '#F8FAFC', borderRadius: '6px' }}>
+                  <span style={{ fontWeight: 600, color: '#1E293B', fontSize: '0.8rem', minWidth: '100px' }}>{spec.label}:</span>
+                  <span style={{ fontSize: '0.8rem' }}>{spec.value}</span>
+                </div>
+              ))}
+            </div>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B', marginBottom: '8px' }}>Description</h4>
+            <p>This product is crafted with premium quality materials, designed for comfort and style. Each piece undergoes strict quality control to ensure the highest standards. The intricate handwoven patterns reflect centuries-old artisanal traditions passed down through generations of master weavers.</p>
           </div>
         )}
         {activeTab === 'care' && (
           <div style={{ marginBottom: '60px', color: '#64748B', lineHeight: 1.8, fontSize: '0.9rem' }}>
-            <p>- Machine wash cold with like colors</p>
-            <p>- Do not bleach</p>
-            <p>- Tumble dry low</p>
-            <p>- Iron on medium heat if needed</p>
-            <p>- Do not dry clean</p>
+            <div style={{ padding: '20px', background: '#FEF3C7', borderRadius: '10px', marginBottom: '20px', border: '1px solid #FDE68A' }}>
+              <p style={{ fontSize: '0.85rem', color: '#92400E', fontWeight: 500, margin: 0 }}>⚠️ Silk products require special care. Please follow these instructions to maintain quality.</p>
+            </div>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B', marginBottom: '12px' }}>Washing Instructions</h4>
+            <ul style={{ paddingLeft: '20px', marginBottom: '20px' }}>
+              <li>Dry clean only for the first 2-3 washes</li>
+              <li>Hand wash gently in cold water with mild detergent</li>
+              <li>Do not wring or twist the fabric</li>
+              <li>Wash dark and light colors separately</li>
+            </ul>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B', marginBottom: '12px' }}>Storage Instructions</h4>
+            <ul style={{ paddingLeft: '20px', marginBottom: '20px' }}>
+              <li>Store in a cool, dry place away from direct sunlight</li>
+              <li>Wrap in muslin cloth or cotton bag — avoid plastic covers</li>
+              <li>Refold periodically to prevent permanent creases</li>
+              <li>Place neem leaves or silica gel packets to prevent moisture</li>
+            </ul>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B', marginBottom: '12px' }}>Ironing Instructions</h4>
+            <ul style={{ paddingLeft: '20px' }}>
+              <li>Iron on low to medium heat with a pressing cloth</li>
+              <li>Iron on the reverse side to protect zari work</li>
+              <li>Do not spray water directly on zari borders</li>
+            </ul>
           </div>
         )}
         {activeTab === 'shipping' && (
           <div style={{ marginBottom: '60px', color: '#64748B', lineHeight: 1.8, fontSize: '0.9rem' }}>
-            <p><strong>Standard Shipping:</strong> 5-7 business days - Free on orders over ₹5,000</p>
-            <p><strong>Express Shipping:</strong> 2-3 business days - ₹250</p>
-            <p><strong>Same Day Delivery:</strong> Available in select cities - ₹500</p>
-            <p style={{ marginTop: '12px' }}>All orders include tracking information. We ship across India and to select international locations.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              {[
+                { icon: <Truck size={20} />, title: 'Standard Shipping', time: '5-7 business days', price: 'Free on orders over ₹5,000', color: '#3b82f6' },
+                { icon: <Clock size={20} />, title: 'Express Shipping', time: '2-3 business days', price: '₹250', color: '#F59E0B' },
+                { icon: <Package size={20} />, title: 'Same Day Delivery', time: 'Within 6 hours', price: '₹500 (Select cities)', color: '#16a34a' },
+              ].map((s, i) => (
+                <div key={i} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ color: s.color, marginBottom: '8px' }}>{s.icon}</div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B', marginBottom: '4px' }}>{s.title}</h4>
+                  <p style={{ fontSize: '0.8rem', margin: '0 0 4px' }}>{s.time}</p>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#B91C1C', margin: 0 }}>{s.price}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ marginBottom: '12px' }}>All orders include tracking information sent to your email. We ship across India via trusted logistics partners.</p>
+            <p style={{ marginBottom: '12px' }}>International shipping available to select countries. Contact us for international shipping rates.</p>
+            <p>For any shipping queries, call us at <strong>+91 8192 272180</strong> or email <strong>hello@bscexclusive.com</strong></p>
+          </div>
+        )}
+        {activeTab === 'reviews' && (
+          <div style={{ marginBottom: '60px' }}>
+            <div style={{ display: 'flex', gap: '32px', marginBottom: '32px', flexWrap: 'wrap' }}>
+              <div style={{ textAlign: 'center', padding: '24px', background: '#F8FAFC', borderRadius: '12px', minWidth: '160px' }}>
+                <div style={{ fontSize: '3rem', fontWeight: 700, color: '#1E293B' }}>{product.rating}</div>
+                <div style={{ display: 'flex', gap: '2px', justifyContent: 'center', marginBottom: '4px' }}>
+                  {[1,2,3,4,5].map(i => <Star key={i} size={16} fill={i <= Math.round(product.rating) ? '#F59E0B' : '#E5E7EB'} color={i <= Math.round(product.rating) ? '#F59E0B' : '#E5E7EB'} />)}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B' }}>{product.reviews} reviews</div>
+              </div>
+              <div style={{ flex: 1, minWidth: '250px' }}>
+                {[5,4,3,2,1].map(star => {
+                  const pct = star === 5 ? 68 : star === 4 ? 22 : star === 3 ? 7 : star === 2 ? 2 : 1;
+                  return (
+                    <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#64748B', minWidth: '12px' }}>{star}</span>
+                      <Star size={13} fill="#F59E0B" color="#F59E0B" />
+                      <div style={{ flex: 1, height: '8px', background: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: '#F59E0B', borderRadius: '4px' }} />
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: '#94A3B8', minWidth: '30px' }}>{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {[
+              { name: 'Priya M.', rating: 5, date: 'Aug 25, 2026', text: 'Absolutely stunning silk saree! The quality exceeded my expectations. The zari work is beautiful and the colors are vibrant. Will definitely buy again.' },
+              { name: 'Anitha K.', rating: 5, date: 'Aug 18, 2026', text: 'Bought this for my daughter\'s wedding. Everyone loved it. The packaging was excellent and delivery was on time.' },
+              { name: 'Rajesh S.', rating: 4, date: 'Aug 10, 2026', text: 'Good quality product. The silk feels premium and the weaving is intricate. Slightly lighter than expected but overall very satisfied.' },
+            ].map((r, i) => (
+              <div key={i} style={{ padding: '20px', background: '#fff', border: '1px solid #F0EBE5', borderRadius: '10px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#B91C1C', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem' }}>{r.name[0]}</div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1E293B' }}>{r.name}</div>
+                      <div style={{ display: 'flex', gap: '2px' }}>
+                        {[1,2,3,4,5].map(j => <Star key={j} size={11} fill={j <= r.rating ? '#F59E0B' : '#E5E7EB'} color={j <= r.rating ? '#F59E0B' : '#E5E7EB'} />)}
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{r.date}</span>
+                </div>
+                <p style={{ fontSize: '0.88rem', color: '#64748B', lineHeight: 1.7, margin: 0 }}>{r.text}</p>
+              </div>
+            ))}
           </div>
         )}
 
