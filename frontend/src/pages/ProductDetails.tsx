@@ -5,7 +5,7 @@ import { getProductById, getProductsByCategory } from '../data/mockProducts';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
-import { Truck, RotateCcw, ChevronLeft, ShoppingBag, Star, Shield, Heart } from 'lucide-react';
+import { Truck, RotateCcw, ChevronLeft, ChevronRight, ShoppingBag, Star, Shield, Heart, ZoomIn, ZoomOut } from 'lucide-react';
 import '../pages/LandingPage.css';
 
 export default function ProductDetails() {
@@ -44,6 +44,22 @@ export default function ProductDetails() {
     document.title = product ? `${product.name} - BSC Exclusive` : 'Product - BSC Exclusive';
   }, [product]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        setSelectedImage((prev) => (prev === 0 ? (product?.images.length || 1) - 1 : prev - 1));
+        setIsZoomed(false);
+      } else if (e.key === 'ArrowRight') {
+        setSelectedImage((prev) => (prev === (product?.images.length || 1) - 1 ? 0 : prev + 1));
+        setIsZoomed(false);
+      } else if (e.key === 'Escape') {
+        setIsZoomed(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [product]);
+
   const relatedProducts = useMemo(() => {
     if (!product) return [];
     return getProductsByCategory(product.category).filter(p => p.id !== product.id).slice(0, 4);
@@ -73,39 +89,21 @@ export default function ProductDetails() {
           <ChevronLeft size={16} /> Back to {product.category}'s Collection
         </Link>
 
-        <div style={{ display: 'flex', gap: '60px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 500px' }}>
-            {/* Main Image with Zoom */}
-            <div
-              style={{ overflow: 'hidden', position: 'relative', background: '#F1F5F9', borderRadius: '12px', cursor: isZoomed ? 'zoom-out' : 'zoom-in' }}
-              onClick={() => setIsZoomed(!isZoomed)}
-            >
-              <img
-                src={product.images[selectedImage]}
-                alt={product.name}
-                style={{
-                  width: '100%', display: 'block', transition: 'transform 0.3s ease',
-                  transform: isZoomed ? 'scale(2)' : 'scale(1)',
-                  transformOrigin: 'center center'
-                }}
-              />
-              {!isZoomed && (
-                <div style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '6px 10px', borderRadius: '6px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  🔍 Click to zoom
-                </div>
-              )}
-            </div>
-
-            {/* Thumbnails */}
-            <div style={{ display: 'flex', gap: '10px', marginTop: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
+          {/* LEFT: Image Gallery */}
+          <div style={{ flex: '1 1 500px', display: 'flex', gap: '16px' }}>
+            {/* Side Thumbnails */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
               {product.images.map((img, i) => (
                 <button
                   key={i}
                   onClick={() => { setSelectedImage(i); setIsZoomed(false); }}
                   style={{
-                    width: '80px', height: '80px', flexShrink: 0, border: selectedImage === i ? '2px solid #B91C1C' : '2px solid #E2E8F0',
-                    borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', padding: 0, background: '#fff',
-                    opacity: selectedImage === i ? 1 : 0.7, transition: 'all 0.2s'
+                    width: '72px', height: '72px', flexShrink: 0,
+                    border: selectedImage === i ? '2px solid #B91C1C' : '2px solid #E2E8F0',
+                    borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', padding: 0,
+                    background: '#fff', opacity: selectedImage === i ? 1 : 0.6,
+                    transition: 'all 0.2s', boxShadow: selectedImage === i ? '0 2px 8px rgba(185,28,28,0.2)' : 'none'
                   }}
                 >
                   <img src={img} alt={`${product.name} view ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -113,9 +111,110 @@ export default function ProductDetails() {
               ))}
             </div>
 
-            {/* Image counter */}
-            <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '0.75rem', color: '#94A3B8' }}>
-              {selectedImage + 1} / {product.images.length} images
+            {/* Main Image */}
+            <div style={{ flex: 1, position: 'relative' }}>
+              <div
+                style={{
+                  overflow: 'hidden', position: 'relative', background: '#F1F5F9',
+                  borderRadius: '12px', cursor: isZoomed ? 'zoom-out' : 'zoom-in',
+                  aspectRatio: '3/4'
+                }}
+                onClick={() => setIsZoomed(!isZoomed)}
+                onMouseMove={(e) => {
+                  if (!isZoomed) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width) * 100;
+                  const y = ((e.clientY - rect.top) / rect.height) * 100;
+                  e.currentTarget.querySelector('img')?.style.setProperty('transform-origin', `${x}% ${y}%`);
+                }}
+              >
+                <img
+                  src={product.images[selectedImage]}
+                  alt={product.name}
+                  style={{
+                    width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+                    transition: isZoomed ? 'none' : 'transform 0.3s ease',
+                    transform: isZoomed ? 'scale(2.5)' : 'scale(1)',
+                  }}
+                />
+
+                {/* Zoom indicator */}
+                <div style={{
+                  position: 'absolute', top: '12px', right: '12px',
+                  background: 'rgba(0,0,0,0.6)', color: '#fff',
+                  padding: '6px 10px', borderRadius: '6px', fontSize: '0.7rem',
+                  display: 'flex', alignItems: 'center', gap: '4px', pointerEvents: 'none'
+                }}>
+                  {isZoomed ? <ZoomOut size={12} /> : <ZoomIn size={12} />}
+                  {isZoomed ? 'Click to zoom out' : 'Click to zoom in'}
+                </div>
+
+                {/* Left Arrow */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImage((prev) => (prev === 0 ? product.images.length - 1 : prev - 1));
+                    setIsZoomed(false);
+                  }}
+                  style={{
+                    position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.15)', transition: 'all 0.2s',
+                    zIndex: 2
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.9)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.15)'; }}
+                >
+                  <ChevronLeft size={20} color="#1E293B" />
+                </button>
+
+                {/* Right Arrow */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImage((prev) => (prev === product.images.length - 1 ? 0 : prev + 1));
+                    setIsZoomed(false);
+                  }}
+                  style={{
+                    position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.15)', transition: 'all 0.2s',
+                    zIndex: 2
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.9)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.15)'; }}
+                >
+                  <ChevronRight size={20} color="#1E293B" />
+                </button>
+
+                {/* Dots */}
+                <div style={{
+                  position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)',
+                  display: 'flex', gap: '6px', zIndex: 2
+                }}>
+                  {product.images.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={(e) => { e.stopPropagation(); setSelectedImage(i); setIsZoomed(false); }}
+                      style={{
+                        width: selectedImage === i ? '20px' : '8px', height: '8px',
+                        borderRadius: '4px', border: 'none', cursor: 'pointer',
+                        background: selectedImage === i ? '#B91C1C' : 'rgba(255,255,255,0.7)',
+                        transition: 'all 0.2s'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Image counter */}
+              <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.75rem', color: '#94A3B8' }}>
+                Image {selectedImage + 1} of {product.images.length}
+              </div>
             </div>
           </div>
           
