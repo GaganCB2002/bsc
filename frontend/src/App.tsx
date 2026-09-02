@@ -94,7 +94,7 @@ function App() {
         <Route path="/customer" element={<Navigate to="/" replace />} />
         
         {/* Customer Dashboard Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerLayout /></ProtectedRoute>}>
+        <Route path="/dashboard" element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
           <Route index element={<CustomerDashboard />} />
           <Route path="orders" element={<CustomerOrders />} />
           <Route path="orders/:id" element={<OrderDetails />} />
