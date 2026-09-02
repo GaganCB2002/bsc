@@ -8,6 +8,7 @@ export interface Product {
   price: number;
   comparePrice?: number;
   image: string;
+  images: string[];
   description: string;
   rating: number;
   reviews: number;
@@ -109,6 +110,9 @@ function generateWomenProducts(): Product[] {
       for (const style of styles) {
         const prefix = colorPrefixes[id % colorPrefixes.length];
         const imgId = womenImages[id % womenImages.length];
+        const imgId2 = womenImages[(id + 3) % womenImages.length];
+        const imgId3 = womenImages[(id + 7) % womenImages.length];
+        const imgId4 = womenImages[(id + 11) % womenImages.length];
         const seed = id * 7 + 13;
         const price = Math.floor(seededRandom(seed) * 18000) + 1200;
         const tags = occasionTags[id % occasionTags.length];
@@ -117,6 +121,14 @@ function generateWomenProducts(): Product[] {
         const isNew = id % 7 === 0;
         const isBestseller = id % 11 === 0;
         const isSale = id % 13 === 0;
+        const baseUrl = 'https://images.unsplash.com/photo-';
+        const suffix = '?auto=format&fit=crop&q=80&w=600&h=750';
+        const images = [
+          `${baseUrl}${imgId}${suffix}`,
+          `${baseUrl}${imgId2}${suffix}`,
+          `${baseUrl}${imgId3}${suffix}`,
+          `${baseUrl}${imgId4}${suffix}`,
+        ];
 
         products.push({
           id: `w-${id}`,
@@ -125,7 +137,8 @@ function generateWomenProducts(): Product[] {
           subcategory: subcat,
           price,
           comparePrice: isSale ? Math.floor(price * 1.4) : undefined,
-          image: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&q=80&w=600&h=750`,
+          image: images[0],
+          images,
           description: `Exquisite ${style.toLowerCase()} featuring premium silk craftsmanship. Handcrafted by skilled artisans with attention to every detail. Perfect for weddings, festivals, and special occasions.`,
           rating: Math.round(rating * 10) / 10,
           reviews: Math.floor(seededRandom(seed + 2) * 500) + 5,
@@ -154,6 +167,9 @@ function generateMenProducts(): Product[] {
       for (const style of styles) {
         const prefix = colorPrefixes[id % colorPrefixes.length];
         const imgId = menImages[id % menImages.length];
+        const imgId2 = menImages[(id + 3) % menImages.length];
+        const imgId3 = menImages[(id + 7) % menImages.length];
+        const imgId4 = menImages[(id + 11) % menImages.length];
         const seed = id * 11 + 29;
         const price = Math.floor(seededRandom(seed) * 15000) + 999;
         const tags = occasionTags[id % occasionTags.length];
@@ -162,6 +178,14 @@ function generateMenProducts(): Product[] {
         const isNew = id % 7 === 0;
         const isBestseller = id % 11 === 0;
         const isSale = id % 13 === 0;
+        const baseUrl = 'https://images.unsplash.com/photo-';
+        const suffix = '?auto=format&fit=crop&q=80&w=600&h=750';
+        const images = [
+          `${baseUrl}${imgId}${suffix}`,
+          `${baseUrl}${imgId2}${suffix}`,
+          `${baseUrl}${imgId3}${suffix}`,
+          `${baseUrl}${imgId4}${suffix}`,
+        ];
 
         products.push({
           id: `m-${id}`,
@@ -170,7 +194,8 @@ function generateMenProducts(): Product[] {
           subcategory: subcat,
           price,
           comparePrice: isSale ? Math.floor(price * 1.4) : undefined,
-          image: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&q=80&w=600&h=750`,
+          image: images[0],
+          images,
           description: `Premium ${style.toLowerCase()} crafted with the finest fabrics. Designed for the modern Indian man who values tradition and style. Ideal for ceremonies, festivals, and daily wear.`,
           rating: Math.round(rating * 10) / 10,
           reviews: Math.floor(seededRandom(seed + 2) * 400) + 5,
@@ -199,6 +224,9 @@ function generateKidsProducts(): Product[] {
       for (const style of styles) {
         const prefix = colorPrefixes[id % colorPrefixes.length];
         const imgId = kidsImages[id % kidsImages.length];
+        const imgId2 = kidsImages[(id + 3) % kidsImages.length];
+        const imgId3 = kidsImages[(id + 7) % kidsImages.length];
+        const imgId4 = kidsImages[(id + 11) % kidsImages.length];
         const seed = id * 17 + 37;
         const price = Math.floor(seededRandom(seed) * 5000) + 499;
         const tags = occasionTags[id % occasionTags.length];
@@ -207,6 +235,14 @@ function generateKidsProducts(): Product[] {
         const isNew = id % 7 === 0;
         const isBestseller = id % 11 === 0;
         const isSale = id % 13 === 0;
+        const baseUrl = 'https://images.unsplash.com/photo-';
+        const suffix = '?auto=format&fit=crop&q=80&w=600&h=750';
+        const images = [
+          `${baseUrl}${imgId}${suffix}`,
+          `${baseUrl}${imgId2}${suffix}`,
+          `${baseUrl}${imgId3}${suffix}`,
+          `${baseUrl}${imgId4}${suffix}`,
+        ];
 
         products.push({
           id: `k-${id}`,
@@ -215,7 +251,8 @@ function generateKidsProducts(): Product[] {
           subcategory: subcat,
           price,
           comparePrice: isSale ? Math.floor(price * 1.4) : undefined,
-          image: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&q=80&w=600&h=750`,
+          image: images[0],
+          images,
           description: `Adorable ${style.toLowerCase()} for your little ones. Made with soft, skin-friendly fabrics ensuring comfort and style. Perfect for birthdays, festivals, and family gatherings.`,
           rating: Math.round(rating * 10) / 10,
           reviews: Math.floor(seededRandom(seed + 2) * 300) + 5,

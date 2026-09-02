@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
-import { getProductById } from '../data/mockProducts';
+import { getProductById, getProductsByCategory } from '../data/mockProducts';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,8 @@ export default function ProductDetails() {
   const [addedMessage, setAddedMessage] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'details' | 'care' | 'shipping'>('details');
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
@@ -42,6 +44,11 @@ export default function ProductDetails() {
     document.title = product ? `${product.name} - BSC Exclusive` : 'Product - BSC Exclusive';
   }, [product]);
 
+  const relatedProducts = useMemo(() => {
+    if (!product) return [];
+    return getProductsByCategory(product.category).filter(p => p.id !== product.id).slice(0, 4);
+  }, [product]);
+
   if (!product) {
     return (
       <div style={{ backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
@@ -53,8 +60,6 @@ export default function ProductDetails() {
       </div>
     );
   }
-
-  const relatedProducts = [product];
 
   return (
     <div style={{ backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
@@ -70,8 +75,47 @@ export default function ProductDetails() {
 
         <div style={{ display: 'flex', gap: '60px', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 500px' }}>
-            <div style={{ overflow: 'hidden', position: 'relative', background: '#F1F5F9', borderRadius: '12px' }}>
-              <img src={product.image} alt={product.name} style={{ width: '100%', display: 'block' }} />
+            {/* Main Image with Zoom */}
+            <div
+              style={{ overflow: 'hidden', position: 'relative', background: '#F1F5F9', borderRadius: '12px', cursor: isZoomed ? 'zoom-out' : 'zoom-in' }}
+              onClick={() => setIsZoomed(!isZoomed)}
+            >
+              <img
+                src={product.images[selectedImage]}
+                alt={product.name}
+                style={{
+                  width: '100%', display: 'block', transition: 'transform 0.3s ease',
+                  transform: isZoomed ? 'scale(2)' : 'scale(1)',
+                  transformOrigin: 'center center'
+                }}
+              />
+              {!isZoomed && (
+                <div style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '6px 10px', borderRadius: '6px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  🔍 Click to zoom
+                </div>
+              )}
+            </div>
+
+            {/* Thumbnails */}
+            <div style={{ display: 'flex', gap: '10px', marginTop: '12px', overflowX: 'auto', paddingBottom: '4px' }}>
+              {product.images.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setSelectedImage(i); setIsZoomed(false); }}
+                  style={{
+                    width: '80px', height: '80px', flexShrink: 0, border: selectedImage === i ? '2px solid #B91C1C' : '2px solid #E2E8F0',
+                    borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', padding: 0, background: '#fff',
+                    opacity: selectedImage === i ? 1 : 0.7, transition: 'all 0.2s'
+                  }}
+                >
+                  <img src={img} alt={`${product.name} view ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </button>
+              ))}
+            </div>
+
+            {/* Image counter */}
+            <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '0.75rem', color: '#94A3B8' }}>
+              {selectedImage + 1} / {product.images.length} images
             </div>
           </div>
           
@@ -83,9 +127,9 @@ export default function ProductDetails() {
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', gap: '2px' }}>
-                {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#F59E0B" color="#F59E0B" />)}
+                {[1,2,3,4,5].map(i => <Star key={i} size={16} fill={i <= Math.round(product.rating) ? '#F59E0B' : '#E5E7EB'} color={i <= Math.round(product.rating) ? '#F59E0B' : '#E5E7EB'} />)}
               </div>
-              <span style={{ fontSize: '0.85rem', color: '#64748B' }}>4.8 (124 reviews)</span>
+              <span style={{ fontSize: '0.85rem', color: '#64748B' }}>{product.rating} ({product.reviews} reviews)</span>
             </div>
             
             <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#B91C1C', marginBottom: '24px' }}>
@@ -212,12 +256,22 @@ export default function ProductDetails() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '24px' }}>
             {relatedProducts.map(p => (
               <Link key={p.id} to={`/product/${p.id}`} style={{ textDecoration: 'none', color: '#1E293B' }}>
-                <div style={{ background: '#F1F5F9', borderRadius: '12px', overflow: 'hidden' }}>
-                  <img src={p.image} alt={p.name} style={{ width: '100%', height: '280px', objectFit: 'cover' }} />
+                <div style={{ background: '#F1F5F9', borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
+                  <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '280px', objectFit: 'cover' }} />
+                  {p.isNew && <span style={{ position: 'absolute', top: '8px', left: '8px', background: '#16a34a', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 700 }}>NEW</span>}
                 </div>
                 <div style={{ padding: '12px 0' }}>
                   <h3 style={{ fontWeight: 500, fontSize: '0.9rem', marginBottom: '4px' }}>{p.name}</h3>
-                  <div style={{ fontWeight: 700, color: '#B91C1C' }}>₹{p.price.toLocaleString('en-IN')}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={11} fill={i < Math.floor(p.rating) ? '#F59E0B' : '#E5E7EB'} color={i < Math.floor(p.rating) ? '#F59E0B' : '#E5E7EB'} />
+                    ))}
+                    <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>({p.reviews})</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontWeight: 700, color: '#B91C1C' }}>₹{p.price.toLocaleString('en-IN')}</span>
+                    {p.comparePrice && <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through' }}>₹{p.comparePrice.toLocaleString('en-IN')}</span>}
+                  </div>
                 </div>
               </Link>
             ))}
