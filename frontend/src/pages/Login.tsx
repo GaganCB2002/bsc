@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
@@ -16,6 +16,8 @@ export default function Login() {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
 
   useEffect(() => {
     document.title = 'Sign In - BSC Exclusive';
@@ -23,9 +25,13 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(user?.role === 'admin' ? '/admin/overview' : '/', { replace: true });
+      if (user?.role === 'admin') {
+        navigate('/admin/overview', { replace: true });
+      } else {
+        navigate(redirectTo, { replace: true });
+      }
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, redirectTo]);
 
   useEffect(() => {
     if (!lockoutUntil) return;
@@ -57,7 +63,11 @@ export default function Login() {
     setLoading(false);
     if (result.success) {
       showToast('success', 'Welcome back to BSC Exclusive!');
-      navigate(result.role === 'admin' ? '/admin/overview' : '/');
+      if (result.role === 'admin') {
+        navigate('/admin/overview');
+      } else {
+        navigate(redirectTo);
+      }
     } else {
       if (result.isLocked && result.lockedUntil) {
         setLockoutUntil(new Date(result.lockedUntil));

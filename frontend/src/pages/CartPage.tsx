@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { ShoppingBag, Trash2, Plus, Minus, ChevronRight } from 'lucide-react';
 import './LandingPage.css';
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -130,7 +132,13 @@ export default function CartPage() {
                   <span style={{ color: '#B91C1C' }}>₹{(totalPrice + (totalPrice >= 5000 ? 0 : 99)).toLocaleString('en-IN')}</span>
                 </div>
                 <button
-                  onClick={() => navigate('/checkout')}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      navigate('/login?redirect=/checkout');
+                      return;
+                    }
+                    navigate('/checkout');
+                  }}
                   style={{
                     width: '100%', padding: '14px', marginTop: '24px', background: '#B91C1C',
                     color: '#fff', border: 'none', fontSize: '0.8rem', fontWeight: 600,
@@ -138,7 +146,7 @@ export default function CartPage() {
                     fontFamily: 'inherit'
                   }}
                 >
-                  Proceed to Checkout
+                  {isAuthenticated ? 'Proceed to Checkout' : 'Login to Checkout'}
                 </button>
                 <Link to="/category/new-arrivals" style={{
                   display: 'block', textAlign: 'center', marginTop: '16px', fontSize: '0.78rem',

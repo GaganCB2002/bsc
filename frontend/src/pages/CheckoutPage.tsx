@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { showToast } from '../components/Toast';
 import { CreditCard, Smartphone, QrCode, Banknote, ChevronRight, Check, Copy, ShieldCheck, Loader2, Tag, X, Ticket, Gift, Download, FileText } from 'lucide-react';
 
@@ -48,6 +49,7 @@ function generatePaymentId(): string {
 
 export default function CheckoutPage() {
   const { items, totalItems, totalPrice, clearCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('razorpay');
   const [step, setStep] = useState<CheckoutStep>('payment');
@@ -98,10 +100,14 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     document.title = 'Checkout - BSC Exclusive';
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/checkout');
+      return;
+    }
     if (items.length === 0 && step !== 'success') {
       navigate('/cart');
     }
-  }, [items.length, navigate, step]);
+  }, [isAuthenticated, items.length, navigate, step]);
 
   const handlePlaceOrder = () => {
     const id = generatePaymentId();
