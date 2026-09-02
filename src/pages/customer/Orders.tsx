@@ -28,7 +28,7 @@ export default function Orders() {
   const [orders] = useState<Order[]>(mockOrders);
 
   useEffect(() => {
-    document.title = 'Order History - BS Channabasappa';
+    document.title = 'Order History - BSC Exclusive';
   }, []);
 
   return (

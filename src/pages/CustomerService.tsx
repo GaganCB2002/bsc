@@ -19,7 +19,7 @@ const faqData = [
   { q: 'How do I track my order?', a: 'Once your order ships, you will receive an email and SMS with tracking details. You can also track your order by logging into your account and visiting the Order History section.' },
   { q: 'Do you offer gift wrapping?', a: 'Yes, we offer complimentary gift wrapping for all orders above ₹8,000. You can add a personalized message during checkout.' },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit/debit cards, UPI (GPay, PhonePe, Paytm), Net Banking, and Cash on Delivery for orders up to ₹25,000.' },
-  { q: 'How do I contact customer support?', a: 'You can reach us via phone at +91 98765 43210, email at hello@bschannabasappa.com, or use the live chat feature on our website. We are available 10 AM to 8 PM IST, Monday to Saturday.' },
+  { q: 'How do I contact customer support?', a: 'You can reach us via phone at +91 8192 272180, email at hello@bscexclusive.com, or use the live chat feature on our website. We are available 10 AM to 8 PM IST, Monday to Saturday.' },
 ];
 
 export default function CustomerService() {
@@ -61,7 +61,7 @@ export default function CustomerService() {
   }, []);
 
   useEffect(() => {
-    document.title = 'Customer Service - BS Channabasappa';
+    document.title = 'Customer Service - BSC Exclusive';
   }, []);
 
   return (
@@ -351,22 +351,22 @@ export default function CustomerService() {
             <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '24px', lineHeight: 1.6 }}>Our customer service team is available Monday to Saturday, 10 AM to 8 PM IST.</p>
             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
-                <Phone size={16} color="#D4A574" /> +91 98765 43210
+                <Phone size={16} color="#D4A574" /> +91 8192 272180
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
-                <Mail size={16} color="#D4A574" /> hello@bschannabasappa.com
+                <Mail size={16} color="#D4A574" /> hello@bscexclusive.com
               </div>
               <button
                 onClick={() => setShowStores(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
               >
-                <MapPin size={16} color="#D4A574" /> Davangere — P.B. Road
+                <MapPin size={16} color="#D4A574" /> Davangere — Medical College Rd
               </button>
               <button
                 onClick={() => setShowStores(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
               >
-                <MapPin size={16} color="#D4A574" /> Gandhi Bazaar, Bangalore
+                <MapPin size={16} color="#D4A574" /> Belgaum — Tilakwadi
               </button>
             </div>
             <button

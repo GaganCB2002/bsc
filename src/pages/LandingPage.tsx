@@ -14,7 +14,7 @@ const collections = [
 
 const testimonials = [
   { name: 'Ananya Sharma', text: 'The finest Kanchipuram silk I have ever owned. The craftsmanship is absolutely breathtaking.', role: 'Loyal Customer' },
-  { name: 'Priya Patel', text: 'BS Channabasappa has been our family\'s go-to for wedding sarees for generations. Unmatched quality.', role: 'Bridal Client' },
+  { name: 'Priya Patel', text: 'BSC Exclusive has been our family\'s go-to for wedding sarees for generations. Unmatched quality.', role: 'Bridal Client' },
   { name: 'Rajesh Verma', text: 'The attention to detail and the richness of the fabrics are truly world-class.', role: 'Premium Member' },
 ];
 
@@ -62,7 +62,7 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    document.title = 'BS Channabasappa Silks & Sarees - Since 1938';
+    document.title = 'BSC Exclusive - Premium Handloom Since 1938';
   }, []);
 
   return (
@@ -72,8 +72,8 @@ export default function LandingPage() {
           <Link to="/" className="lp-logo" style={{ display: 'flex', alignItems: 'center' }}>
             <BrandLogo size={48} variant="gold" />
             <div>
-              <span className="lp-logo-text" style={{ fontSize: '0.72rem', opacity: 1, margin: 0, lineHeight: 1.2 }}>Channabasappa</span>
-              <div style={{ fontSize: '0.5rem', color: 'inherit', opacity: 0.6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Silks &amp; Sarees</div>
+              <span className="lp-logo-text" style={{ fontSize: '0.72rem', opacity: 1, margin: 0, lineHeight: 1.2 }}>BSC Exclusive</span>
+              <div style={{ fontSize: '0.5rem', color: 'inherit', opacity: 0.6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Premium Handloom</div>
             </div>
           </Link>
           <nav className="lp-nav">
@@ -134,8 +134,7 @@ export default function LandingPage() {
         <div className="lp-hero-content">
           <div className="lp-hero-badge reveal">Since 1938</div>
           <h1 className="lp-hero-title reveal">
-            BS <span className="lp-hero-highlight">Channabasappa</span>
-            <span className="lp-hero-highlight">Silks &amp; Sarees</span>
+            <span className="lp-hero-highlight">BSC</span> Exclusive
           </h1>
           <p className="lp-hero-desc reveal">
             Authentic handloom silk sarees and traditional ethnic wear — crafted by master weavers and cherished by connoisseurs for four generations.
@@ -187,7 +186,7 @@ export default function LandingPage() {
             <div className="lp-about-text reveal">
               <span className="lp-section-tag">About Us</span>
               <h2>Preserving the Art of <span className="lp-text-accent">Handloom Silk</span> Since 1938</h2>
-              <p>For over eight decades, BS Channabasappa Silks & Sarees has been synonymous with authentic South Indian handloom traditions. Based in the heart of Karnataka, we source directly from master weavers in Kanchipuram, Banaras, and Dharmavaram.</p>
+              <p>For over eight decades, BSC Exclusive has been synonymous with authentic South Indian handloom traditions. Based in the heart of Karnataka, we source directly from master weavers in Kanchipuram, Banaras, and Dharmavaram.</p>
               <p>Every piece in our collection tells a story of heritage — from the careful selection of raw silk threads to the intricate handwoven zari work perfected over centuries.</p>
               <div className="lp-values">
                 <div className="lp-value"><Shield size={18} /><span>100% Authentic Silk</span></div>
@@ -230,8 +229,8 @@ export default function LandingPage() {
             <div className="lp-legacy-text reveal">
               <span className="lp-section-tag">Our Heritage</span>
               <h2>The Art Behind <span className="lp-text-accent">Every Thread</span></h2>
-              <p>Each silk saree at BS Channabasappa passes through the hands of skilled artisans who have inherited centuries-old weaving techniques. From the dyeing of raw silk to the final finishing touches, every step is a testament to India's rich handloom heritage.</p>
-              <p>Founded in 1938 by Sri Basavaraj Channabasappa, our journey began in a small weaving unit in Kanchipuram with just four handlooms. Today, we collaborate with over 200 master weavers across Karnataka, Tamil Nadu, and Uttar Pradesh, preserving the art of handloom silk weaving for future generations.</p>
+              <p>Each silk saree at BSC Exclusive passes through the hands of skilled artisans who have inherited centuries-old weaving techniques. From the dyeing of raw silk to the final finishing touches, every step is a testament to India's rich handloom heritage.</p>
+              <p>Founded in 1938, our journey began in a small weaving unit in Kanchipuram with just four handlooms. Today, we collaborate with over 200 master weavers across Karnataka, Tamil Nadu, and Uttar Pradesh, preserving the art of handloom silk weaving for future generations.</p>
               <ul className="lp-legacy-list">
                 <li><span className="lp-legacy-dot" />Pure mulberry silk sourced from Karnataka's Sericulture belt</li>
                 <li><span className="lp-legacy-dot" />Authentic Kanchipuram zari woven with real silver thread dipped in gold</li>
@@ -307,8 +306,8 @@ export default function LandingPage() {
               <Link to="/" className="lp-logo" style={{ gap: '10px', marginBottom: '12px' }}>
                 <span className="lp-logo-icon" style={{ fontSize: '1.6rem', color: '#D4A574' }}>B<span style={{ color: '#fff' }}>S</span></span>
                 <div>
-                  <span className="lp-logo-text" style={{ fontSize: '0.8rem', opacity: 1, color: '#fff', margin: 0, lineHeight: 1.2 }}>Channabasappa</span>
-                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Silks &amp; Sarees</div>
+                  <span className="lp-logo-text" style={{ fontSize: '0.8rem', opacity: 1, color: '#fff', margin: 0, lineHeight: 1.2 }}>BSC Exclusive</span>
+                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Premium Handloom</div>
                 </div>
               </Link>
               <p>India's premier destination for authentic handloom silk sarees and traditional ethnic wear, serving connoisseurs of fine craftsmanship since 1938.</p>
@@ -347,7 +346,7 @@ export default function LandingPage() {
                     onClick={() => setShowStores(true)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'inherit', fontFamily: 'inherit', fontSize: '0.82rem', textAlign: 'left' }}
                   >
-                    <MapPin size={14} /> Davangere — P.B. Road
+                    <MapPin size={14} /> Davangere — Medical College Rd
                   </button>
                 </li>
                 <li>
@@ -355,11 +354,19 @@ export default function LandingPage() {
                     onClick={() => setShowStores(true)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'inherit', fontFamily: 'inherit', fontSize: '0.82rem', textAlign: 'left' }}
                   >
-                    <MapPin size={14} /> Gandhi Bazaar, Bangalore
+                    <MapPin size={14} /> Belgaum — Tilakwadi
                   </button>
                 </li>
-                <li><Phone size={14} /><span>+91 98765 43210</span></li>
-                <li><Mail size={14} /><span>hello@bschannabasappa.com</span></li>
+                <li>
+                  <button
+                    onClick={() => setShowStores(true)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'inherit', fontFamily: 'inherit', fontSize: '0.82rem', textAlign: 'left' }}
+                  >
+                    <MapPin size={14} /> Shivamogga — B.H. Road
+                  </button>
+                </li>
+                <li><Phone size={14} /><span>+91 8192 272180</span></li>
+                <li><Mail size={14} /><span>hello@bscexclusive.com</span></li>
               </ul>
               <button
                 onClick={() => setShowStores(true)}
@@ -379,7 +386,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="lp-footer-bottom">
-            <p>&copy; {new Date().getFullYear()} BS Channabasappa Silks & Sarees. All Rights Reserved.</p>
+            <p>&copy; {new Date().getFullYear()} BSC Exclusive. All Rights Reserved.</p>
             <div className="lp-footer-links">
               <a href="/privacy">Privacy Policy</a>
               <a href="/terms">Terms of Service</a>

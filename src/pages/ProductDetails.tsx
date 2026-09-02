@@ -34,7 +34,7 @@ export default function ProductDetails() {
   }, []);
 
   useEffect(() => {
-    document.title = 'Product Details - BS Channabasappa';
+    document.title = 'Product Details - BSC Exclusive';
   }, []);
 
   if (!product) {

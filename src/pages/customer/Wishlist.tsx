@@ -9,7 +9,7 @@ export default function Wishlist() {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    document.title = 'Wishlist - BS Channabasappa';
+    document.title = 'Wishlist - BSC Exclusive';
   }, []);
 
   return (

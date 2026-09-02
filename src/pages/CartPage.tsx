@@ -9,7 +9,7 @@ export default function CartPage() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
 
   useEffect(() => {
-    document.title = 'Shopping Cart - BS Channabasappa';
+    document.title = 'Shopping Cart - BSC Exclusive';
   }, []);
 
   return (

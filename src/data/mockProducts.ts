@@ -61,7 +61,7 @@ const generateProducts = (category: 'men' | 'women' | 'kids', count: number): Pr
       category,
       price: Math.floor(Math.random() * 15000) + 1500,
       image: `https://images.unsplash.com/photo-${imageId}?auto=format&fit=crop&q=80&w=800&h=1000`,
-      description: `Experience the finest craftsmanship with this exquisite ${type.toLowerCase()} from BS Channabasappa. Made with premium materials and designed for utmost comfort and elegance.`
+      description: `Experience the finest craftsmanship with this exquisite ${type.toLowerCase()} from BSC Exclusive. Made with premium materials and designed for utmost comfort and elegance.`
     });
   }
   

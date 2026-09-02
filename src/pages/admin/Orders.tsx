@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function Orders() {
   useEffect(() => {
-    document.title = 'Orders - BS Channabasappa Admin';
+    document.title = 'Orders - BSC Exclusive Admin';
   }, []);
 
   const orders = [

@@ -29,7 +29,7 @@ export default function CategoryPage() {
   }, []);
 
   useEffect(() => {
-    document.title = 'Category - BS Channabasappa';
+    document.title = 'Category - BSC Exclusive';
   }, []);
 
   return (

@@ -2,47 +2,53 @@ import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { 
   User, Package, Heart, MapPin, 
-  Settings, LogOut, HelpCircle, 
+  Settings, HelpCircle, 
   ShoppingBag, Search, Bell 
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { LogOut } from 'lucide-react';
 import './AdminLayout.css'; // We can reuse the admin layout CSS structure since it's a dashboard
 
 export default function CustomerLayout() {
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
-
+  const { user, logout } = useAuth();
+  
   useEffect(() => {
-    if (localStorage.getItem('role') !== 'customer') {
-      navigate('/login');
-    }
-  }, [navigate]);
+    document.title = 'My Account - BS Channabasappa';
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="admin-app">
       <aside className="admin-sidebar" style={{ backgroundColor: '#2C2826' }}>
         <Link to="/" className="admin-brand" style={{ gap: '10px' }}>
-          <img src="/brand-logo.png" alt="BS Channabasappa" style={{ height: '36px', width: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-          <span style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#D4A574', lineHeight: 1 }}>B<span style={{ color: '#fff' }}>S</span></span>
+          <img src="/brand-logo.png" alt="BSC Exclusive" style={{ height: '36px', width: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+          <span style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#D4A574', lineHeight: 1 }}>B<span style={{ color: '#fff' }}>SC</span></span>
           <div>
-            <div className="admin-brand-text" style={{ fontSize: '0.9rem', color: '#fff', lineHeight: 1.2 }}>Channabasappa</div>
+            <div className="admin-brand-text" style={{ fontSize: '0.9rem', color: '#fff', lineHeight: 1.2 }}>BSC Exclusive</div>
             <div className="admin-brand-sub" style={{ color: '#D4A574', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Customer Portal</div>
           </div>
         </Link>
         
         <div className="admin-nav-menu">
-          <NavLink to="/customer/dashboard" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
+          <NavLink to="/dashboard" end className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
             <span className="nav-icon"><User size={20} /></span> My Account
           </NavLink>
-          <NavLink to="/customer/orders" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
+          <NavLink to="/dashboard/orders" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
             <span className="nav-icon"><Package size={20} /></span> Order History
           </NavLink>
-          <NavLink to="/customer/wishlist" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
+          <NavLink to="/dashboard/wishlist" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
             <span className="nav-icon"><Heart size={20} /></span> Wishlist
           </NavLink>
-          <NavLink to="/customer/addresses" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
+          <NavLink to="/dashboard/addresses" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
             <span className="nav-icon"><MapPin size={20} /></span> Saved Addresses
           </NavLink>
-          <NavLink to="/customer/settings" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
+          <NavLink to="/dashboard/settings" className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}>
             <span className="nav-icon"><Settings size={20} /></span> Account Settings
           </NavLink>
         </div>
@@ -50,7 +56,7 @@ export default function CustomerLayout() {
         <div className="admin-nav-bottom">
           <Link to="/category/new-arrivals" className="btn-new-product" style={{ display: 'block', textDecoration: 'none', backgroundColor: '#fff', color: '#2C2826' }}>Shop New Arrivals</Link>
           <div className="admin-nav-item"><span className="nav-icon"><HelpCircle size={20} /></span> Contact Support</div>
-          <Link to="/" onClick={() => localStorage.removeItem('role')} className="admin-nav-item" style={{ color: '#FDE0D0' }}><span className="nav-icon"><LogOut size={20} /></span> Sign Out</Link>
+          <div onClick={handleLogout} className="admin-nav-item" style={{ color: '#FDE0D0', cursor: 'pointer' }}><span className="nav-icon"><LogOut size={20} /></span> Sign Out</div>
         </div>
       </aside>
 
@@ -81,12 +87,12 @@ export default function CustomerLayout() {
               )}
             </div>
             <div className="user-profile">
-              <div className="avatar" style={{ backgroundColor: '#E8D6C0', color: '#2C2826', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>A</div>
-              Alexander
+              <div className="profile-name">{user?.name || 'Customer'}</div>
+              <div className="profile-email">{user?.email || 'customer@example.com'}</div>
             </div>
-            <Link to="/" onClick={() => localStorage.removeItem('role')} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#dc2626', textDecoration: 'none', fontWeight: 600, marginLeft: '16px', padding: '8px 16px', backgroundColor: '#FDE8E0', borderRadius: '8px' }}>
+            <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#dc2626', textDecoration: 'none', fontWeight: 600, marginLeft: '16px', padding: '8px 16px', backgroundColor: '#FDE8E0', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
               <LogOut size={16} /> Logout
-            </Link>
+            </button>
           </div>
         </header>
 

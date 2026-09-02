@@ -29,7 +29,7 @@ export default function Addresses() {
   const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
 
   useEffect(() => {
-    document.title = 'Saved Addresses - BS Channabasappa';
+    document.title = 'Saved Addresses - BSC Exclusive';
   }, []);
 
   const setDefault = (id: string) => {

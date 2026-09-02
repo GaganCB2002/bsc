@@ -27,7 +27,7 @@ export default function LoginSelection() {
   }, []);
 
   useEffect(() => {
-    document.title = 'Sign In - BS Channabasappa';
+    document.title = 'Sign In - BSC Exclusive';
   }, []);
 
   return (
@@ -80,7 +80,7 @@ export default function LoginSelection() {
               color: '#fff',
               marginBottom: '12px',
               letterSpacing: '-0.02em'
-            }}>Welcome to <span style={{ fontWeight: 700, color: '#D4A574' }}>BS Channabasappa</span></h1>
+            }}>Welcome to <span style={{ fontWeight: 700, color: '#D4A574' }}>BSC Exclusive</span></h1>
             <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)', maxWidth: '480px', margin: '0 auto' }}>
               Select your portal to continue your journey with us.
             </p>
@@ -260,7 +260,7 @@ export default function LoginSelection() {
 
       {/* Footer */}
       <footer style={{ backgroundColor: '#2C2826', color: '#fff', padding: '24px', textAlign: 'center', fontSize: '0.875rem' }}>
-        <p style={{ color: 'rgba(255,255,255,0.6)' }}>&copy; {new Date().getFullYear()} B.S Channabasappa & Sons. All rights reserved.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)' }}>&copy; {new Date().getFullYear()} BSC Exclusive. All rights reserved.</p>
       </footer>
     </div>
   );

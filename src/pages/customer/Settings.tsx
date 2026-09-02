@@ -9,7 +9,7 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    document.title = 'Account Settings - BS Channabasappa';
+    document.title = 'Account Settings - BSC Exclusive';
   }, []);
 
   const handleSave = (e: React.FormEvent) => {

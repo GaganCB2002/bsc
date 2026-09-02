@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Tag, Package, ShoppingCart, 
   Users, Megaphone, LineChart, Settings, 
-  Shield, HelpCircle, LogOut, Search, Bell 
+  Shield, HelpCircle, LogOut, Search, Bell, BookOpen 
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './AdminLayout.css';
 
 export default function AdminLayout() {
@@ -14,13 +15,11 @@ export default function AdminLayout() {
     { id: 2, title: 'Low Stock Alert', text: 'Oxford Cotton Shirt is running critically low.', isAlert: true }
   ]);
   const [unreadCount, setUnreadCount] = useState(2);
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (localStorage.getItem('role') !== 'admin') {
-      navigate('/login');
-      return;
-    }
+    document.title = 'Admin Portal - BS Channabasappa';
     
     const interval = setInterval(() => {
       const liveEvents = [
@@ -39,14 +38,19 @@ export default function AdminLayout() {
     setShowNotifications(!showNotifications);
     if (!showNotifications) setUnreadCount(0);
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
   return (
     <div className="admin-app">
       <aside className="admin-sidebar">
         <Link to="/" className="admin-brand" style={{ gap: '10px' }}>
-          <img src="/brand-logo.png" alt="BS Channabasappa" style={{ height: '36px', width: '36px', borderRadius: '50%', objectFit: 'cover', marginRight: '12px' }} />
-          <span style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#D4A574', lineHeight: 1 }}>B<span style={{ color: '#fff' }}>S</span></span>
+          <img src="/brand-logo.png" alt="BSC Exclusive" style={{ height: '36px', width: '36px', borderRadius: '50%', objectFit: 'cover', marginRight: '12px' }} />
+          <span style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#D4A574', lineHeight: 1 }}>B<span style={{ color: '#fff' }}>SC</span></span>
           <div>
-            <div className="admin-brand-text" style={{ fontSize: '0.9rem', color: '#fff', lineHeight: 1.2 }}>Channabasappa</div>
+            <div className="admin-brand-text" style={{ fontSize: '0.9rem', color: '#fff', lineHeight: 1.2 }}>BSC Exclusive</div>
             <div className="admin-brand-sub" style={{ color: '#D4A574', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Admin Portal</div>
           </div>
         </Link>
@@ -54,6 +58,12 @@ export default function AdminLayout() {
         <div className="admin-nav-menu">
           <NavLink to="/admin/overview" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
             <span className="nav-icon"><LayoutDashboard size={20} /></span> Dashboard
+          </NavLink>
+          <NavLink to="/admin/courses" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
+            <span className="nav-icon"><BookOpen size={20} /></span> Course Manager
+          </NavLink>
+          <NavLink to="/admin/learners" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
+            <span className="nav-icon"><Users size={20} /></span> Learner Progress
           </NavLink>
           <NavLink to="/admin/catalog" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'}>
             <span className="nav-icon"><Tag size={20} /></span> Catalog
@@ -84,7 +94,7 @@ export default function AdminLayout() {
         <div className="admin-nav-bottom">
           <Link to="/admin/products/new" className="btn-new-product" style={{ display: 'block', textDecoration: 'none' }}>+ New Product</Link>
           <div className="admin-nav-item"><span className="nav-icon"><HelpCircle size={20} /></span> Help Center</div>
-          <Link to="/" onClick={() => localStorage.removeItem('role')} className="admin-nav-item"><span className="nav-icon"><LogOut size={20} /></span> Logout</Link>
+          <div onClick={handleLogout} className="admin-nav-item" style={{ cursor: 'pointer' }}><span className="nav-icon"><LogOut size={20} /></span> Logout</div>
         </div>
       </aside>
 
@@ -121,12 +131,12 @@ export default function AdminLayout() {
             
             <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#8A7A6A' }}><HelpCircle size={24} /></span>
             <div className="user-profile">
-              <div className="avatar"></div>
-              BSSC Admin
+              <div className="avatar" style={{ backgroundColor: '#E8D6C0', color: '#2C2826', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>{user?.name?.[0] || 'A'}</div>
+              {user?.name || 'Admin'}
             </div>
-            <Link to="/" onClick={() => localStorage.removeItem('role')} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#dc2626', textDecoration: 'none', fontWeight: 600, marginLeft: '16px', padding: '8px 16px', backgroundColor: '#FDE8E0', borderRadius: '8px' }}>
+            <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#dc2626', textDecoration: 'none', fontWeight: 600, marginLeft: '16px', padding: '8px 16px', backgroundColor: '#FDE8E0', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
               <LogOut size={16} /> Logout
-            </Link>
+            </button>
           </div>
         </header>
 

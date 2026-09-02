@@ -13,8 +13,8 @@ export default function PublicHeader() {
         <Link to="/" className="lp-logo" style={{ gap: '10px' }}>
           <BrandLogo size={48} variant="gold" />
           <div>
-            <div className="lp-logo-text" style={{ fontSize: '0.75rem', opacity: 1, margin: 0, lineHeight: 1.2, color: 'inherit' }}>Channabasappa</div>
-            <div style={{ fontSize: '0.55rem', color: 'inherit', opacity: 0.5, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Silks &amp; Sarees</div>
+            <div className="lp-logo-text" style={{ fontSize: '0.75rem', opacity: 1, margin: 0, lineHeight: 1.2, color: 'inherit' }}>BSC Exclusive</div>
+            <div style={{ fontSize: '0.55rem', color: 'inherit', opacity: 0.5, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Premium Handloom</div>
           </div>
         </Link>
         <nav className="lp-nav">

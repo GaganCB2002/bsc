@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 export default function Marketing() {
   useEffect(() => {
-    document.title = 'Marketing - BS Channabasappa Admin';
+    document.title = 'Marketing - BSC Exclusive Admin';
   }, []);
 
   const campaigns = [

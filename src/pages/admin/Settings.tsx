@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 export default function Settings() {
   useEffect(() => {
-    document.title = 'Admin Settings - BS Channabasappa';
+    document.title = 'Admin Settings - BSC Exclusive';
   }, []);
 
   return (
@@ -32,11 +32,11 @@ export default function Settings() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px' }}>Store Name</label>
-                <input type="text" defaultValue="BS Channabasappa Silks & Sarees" style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.875rem' }} />
+                <input type="text" defaultValue="BSC Exclusive" style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.875rem' }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px' }}>Contact Email</label>
-                <input type="email" defaultValue="support@bschannabasappa.com" style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.875rem' }} />
+                <input type="email" defaultValue="support@bscexclusive.com" style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.875rem' }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px' }}>Store Currency</label>

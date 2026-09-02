@@ -4,7 +4,7 @@ import { AlertTriangle, Plus, Package, Tag } from 'lucide-react';
 
 export default function Overview() {
   useEffect(() => {
-    document.title = 'Admin Dashboard - BS Channabasappa';
+    document.title = 'Admin Dashboard - BSC Exclusive';
   }, []);
 
   return (
@@ -12,7 +12,7 @@ export default function Overview() {
       <div className="page-header">
         <div className="page-title">
           <h1>Executive Overview</h1>
-          <p>Real-time performance metrics for BS Channabasappa Retail ecosystem.</p>
+          <p>Real-time performance metrics for BSC Exclusive Retail ecosystem.</p>
         </div>
         <div className="alert-box">
           <div className="alert-icon"><AlertTriangle size={24} /></div>

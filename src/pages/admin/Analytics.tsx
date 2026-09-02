@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 export default function Analytics() {
   useEffect(() => {
-    document.title = 'Analytics - BS Channabasappa Admin';
+    document.title = 'Analytics - BSC Exclusive Admin';
   }, []);
 
   return (

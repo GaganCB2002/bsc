@@ -5,7 +5,7 @@ export default function BrandLogo({ size = 48, variant = 'light' }: { size?: num
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none" style={{ borderRadius: '50%', flexShrink: 0 }}>
       <circle cx="24" cy="24" r="24" fill={bgColor} />
       <text x="24" y="24" textAnchor="middle" dominantBaseline="central" fill={textColor} fontFamily="Inter, sans-serif" fontWeight="800" fontSize="22" letterSpacing="-0.5">B</text>
-      <text x="24" y="40" textAnchor="middle" dominantBaseline="central" fill={textColor} fontFamily="Inter, sans-serif" fontWeight="300" fontSize="10" letterSpacing="0.5">S</text>
+      <text x="24" y="40" textAnchor="middle" dominantBaseline="central" fill={textColor} fontFamily="Inter, sans-serif" fontWeight="300" fontSize="10" letterSpacing="0.5">SC</text>
     </svg>
   );
 }

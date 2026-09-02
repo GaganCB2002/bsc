@@ -4,7 +4,7 @@ import { AlertTriangle } from 'lucide-react';
 
 export default function Inventory() {
   useEffect(() => {
-    document.title = 'Inventory - BS Channabasappa Admin';
+    document.title = 'Inventory - BSC Exclusive Admin';
   }, []);
 
   return (

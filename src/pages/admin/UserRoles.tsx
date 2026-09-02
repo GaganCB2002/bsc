@@ -9,16 +9,16 @@ interface User {
 }
 
 const mockUsers: User[] = [
-  { id: '1', name: 'Gagan BSSC', email: 'gagan@bschannabasappa.com', role: 'Admin', status: 'Active' },
-  { id: '2', name: 'Priya Sharma', email: 'priya@bschannabasappa.com', role: 'Manager', status: 'Active' },
-  { id: '3', name: 'Rahul Desai', email: 'rahul@bschannabasappa.com', role: 'Staff', status: 'Active' },
-  { id: '4', name: 'Anita Kumar', email: 'anita@bschannabasappa.com', role: 'Manager', status: 'Inactive' },
-  { id: '5', name: 'Vikram Singh', email: 'vikram@bschannabasappa.com', role: 'Staff', status: 'Active' },
+  { id: '1', name: 'Gagan BSSC', email: 'gagan@bscexclusive.com', role: 'Admin', status: 'Active' },
+  { id: '2', name: 'Priya Sharma', email: 'priya@bscexclusive.com', role: 'Manager', status: 'Active' },
+  { id: '3', name: 'Rahul Desai', email: 'rahul@bscexclusive.com', role: 'Staff', status: 'Active' },
+  { id: '4', name: 'Anita Kumar', email: 'anita@bscexclusive.com', role: 'Manager', status: 'Inactive' },
+  { id: '5', name: 'Vikram Singh', email: 'vikram@bscexclusive.com', role: 'Staff', status: 'Active' },
 ];
 
 export default function UserRoles() {
   useEffect(() => {
-    document.title = 'User Roles - BS Channabasappa Admin';
+    document.title = 'User Roles - BSC Exclusive Admin';
   }, []);
 
   const [users, setUsers] = useState<User[]>(mockUsers);
@@ -32,7 +32,7 @@ export default function UserRoles() {
       <div className="page-header">
         <div className="page-title">
           <h1>User Roles & Permissions</h1>
-          <p>Manage staff access to the BS Channabasappa retail ecosystem.</p>
+          <p>Manage staff access to the BSC Exclusive retail ecosystem.</p>
         </div>
         <button style={{
           backgroundColor: '#4f46e5',

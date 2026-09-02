@@ -3,7 +3,7 @@ import { Settings } from 'lucide-react';
 
 export default function Catalog() {
   useEffect(() => {
-    document.title = 'Catalog - BS Channabasappa Admin';
+    document.title = 'Catalog - BSC Exclusive Admin';
   }, []);
 
   return (
@@ -126,7 +126,7 @@ export default function Catalog() {
       </div>
       
       <div style={{ textAlign: 'center', color: '#6b7280', fontSize: '0.75rem', fontWeight: 500, marginTop: '32px' }}>
-        Last updated: Oct 24, 2023, 11:45 AM • Data synced from BS Channabasappa Logistics Core
+        Last updated: Oct 24, 2023, 11:45 AM • Data synced from BSC Exclusive Logistics Core
       </div>
     </>
   );

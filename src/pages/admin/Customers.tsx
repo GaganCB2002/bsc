@@ -20,7 +20,7 @@ export default function Customers() {
   }, []);
 
   useEffect(() => {
-    document.title = 'Customers - BS Channabasappa Admin';
+    document.title = 'Customers - BSC Exclusive Admin';
   }, []);
 
   return (
