@@ -3,10 +3,42 @@ import { Link, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import { useCart } from '../context/CartContext';
 import { showToast } from '../components/Toast';
-import { CreditCard, Smartphone, QrCode, Banknote, ChevronRight, Check, Copy, ShieldCheck, Loader2 } from 'lucide-react';
+import { CreditCard, Smartphone, QrCode, Banknote, ChevronRight, Check, Copy, ShieldCheck, Loader2, Tag, X, Ticket, Gift } from 'lucide-react';
 
 type PaymentMethod = 'razorpay' | 'upi' | 'qr' | 'cod';
 type CheckoutStep = 'payment' | 'verify' | 'success';
+
+interface Coupon {
+  code: string;
+  type: 'percent' | 'flat' | 'freeship';
+  value: number;
+  minOrder: number;
+  maxDiscount?: number;
+  description: string;
+  expires: string;
+  active: boolean;
+}
+
+const availableCoupons: Coupon[] = [
+  { code: 'WELCOME20', type: 'percent', value: 20, minOrder: 1999, maxDiscount: 2000, description: '20% off for new customers', expires: 'Sep 30, 2026', active: true },
+  { code: 'BSC500', type: 'flat', value: 500, minOrder: 5000, description: 'Flat ₹500 off on orders above ₹5,000', expires: 'Oct 15, 2026', active: true },
+  { code: 'FESTIVE30', type: 'percent', value: 30, minOrder: 3000, maxDiscount: 5000, description: '30% off on festive collection', expires: 'Nov 30, 2026', active: true },
+  { code: 'FREEDEL', type: 'freeship', value: 0, minOrder: 0, description: 'Free delivery on all orders', expires: 'Sep 15, 2026', active: true },
+  { code: 'BRIDE10', type: 'percent', value: 10, minOrder: 10000, maxDiscount: 3000, description: '10% off on bridal collection', expires: 'Dec 31, 2026', active: true },
+  { code: 'BSC2026', type: 'percent', value: 15, minOrder: 2500, maxDiscount: 3000, description: '15% off anniversary special', expires: 'Oct 31, 2026', active: true },
+  { code: 'FLAT1000', type: 'flat', value: 1000, minOrder: 8000, description: 'Flat ₹1000 off on orders above ₹8,000', expires: 'Nov 15, 2026', active: true },
+  { code: 'FIRSTRIDER', type: 'percent', value: 25, minOrder: 1500, maxDiscount: 1500, description: '25% off for first-time buyers', expires: 'Oct 31, 2026', active: true },
+];
+
+function calculateDiscount(coupon: Coupon, subtotal: number): number {
+  if (subtotal < coupon.minOrder) return 0;
+  if (coupon.type === 'percent') {
+    const disc = Math.round(subtotal * coupon.value / 100);
+    return coupon.maxDiscount ? Math.min(disc, coupon.maxDiscount) : disc;
+  }
+  if (coupon.type === 'flat') return coupon.value;
+  return 0;
+}
 
 function generatePaymentId(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -24,9 +56,33 @@ export default function CheckoutPage() {
   const [verifyInput, setVerifyInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [showCouponList, setShowCouponList] = useState(false);
+
+  // Auto-apply best coupon on first render via lazy state init
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(() => {
+    let bestCoupon: Coupon | null = null;
+    let bestDiscount = 0;
+    for (const coupon of availableCoupons) {
+      if (!coupon.active) continue;
+      const disc = coupon.type === 'freeship' ? 99 : calculateDiscount(coupon, totalPrice);
+      if (disc > bestDiscount) { bestDiscount = disc; bestCoupon = coupon; }
+    }
+    if (bestCoupon) {
+      setTimeout(() => {
+        const disc = bestCoupon!.type === 'freeship' ? 0 : calculateDiscount(bestCoupon!, totalPrice);
+        if (disc > 0) showToast('success', `Auto-applied "${bestCoupon!.code}" — you save ₹${disc.toLocaleString('en-IN')}!`);
+        else showToast('success', `Auto-applied "FREEDEL" — Free delivery!`);
+      }, 300);
+    }
+    return bestCoupon;
+  });
 
   const shipping = totalPrice >= 5000 ? 0 : 99;
-  const total = totalPrice + shipping;
+  const freeShippingFromCoupon = appliedCoupon?.type === 'freeship';
+  const effectiveShipping = (shipping === 0 || freeShippingFromCoupon) ? 0 : shipping;
+  const discount = appliedCoupon ? calculateDiscount(appliedCoupon, totalPrice) : 0;
+  const total = totalPrice + effectiveShipping - discount;
 
   useEffect(() => {
     document.title = 'Checkout - BSC Exclusive';
@@ -69,6 +125,38 @@ export default function CheckoutPage() {
     navigator.clipboard.writeText(paymentId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleApplyCoupon = () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    const coupon = availableCoupons.find(c => c.code === code && c.active);
+    if (!coupon) { showToast('error', 'Invalid coupon code'); return; }
+    if (totalPrice < coupon.minOrder) {
+      showToast('error', `Minimum order ₹${coupon.minOrder.toLocaleString('en-IN')} required for "${code}"`);
+      return;
+    }
+    setAppliedCoupon(coupon);
+    setCouponInput('');
+    setShowCouponList(false);
+    const disc = coupon.type === 'freeship' ? 0 : calculateDiscount(coupon, totalPrice);
+    showToast('success', `Coupon "${code}" applied! ${coupon.type === 'freeship' ? 'Free delivery!' : `You save ₹${disc.toLocaleString('en-IN')}`}`);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    showToast('info', 'Coupon removed');
+  };
+
+  const handleSelectCoupon = (coupon: Coupon) => {
+    if (totalPrice < coupon.minOrder) {
+      showToast('error', `Minimum order ₹${coupon.minOrder.toLocaleString('en-IN')} required`);
+      return;
+    }
+    setAppliedCoupon(coupon);
+    setShowCouponList(false);
+    const disc = coupon.type === 'freeship' ? 0 : calculateDiscount(coupon, totalPrice);
+    showToast('success', `Coupon "${coupon.code}" applied! ${coupon.type === 'freeship' ? 'Free delivery!' : `You save ₹${disc.toLocaleString('en-IN')}`}`);
   };
 
   if (items.length === 0 && step !== 'success') return null;
@@ -176,6 +264,11 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '4px' }}>Items: {totalItems}</div>
+                {discount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#16A34A', marginBottom: '4px', fontWeight: 600 }}>
+                    <span>Coupon ({appliedCoupon?.code})</span><span>-₹{discount.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
                 <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px', marginTop: '12px', display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1A1A2E' }}>
                   <span>Total</span>
                   <span style={{ color: '#B91C1C' }}>₹{total.toLocaleString('en-IN')}</span>
@@ -252,16 +345,98 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Coupon Section */}
+                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '16px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                    <Ticket size={16} color="#B91C1C" />
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1A1A2E' }}>Apply Coupon</span>
+                  </div>
+                  {appliedCoupon ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Tag size={14} color="#16A34A" />
+                        <div>
+                          <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#16A34A', fontFamily: 'monospace' }}>{appliedCoupon.code}</span>
+                          <span style={{ fontSize: '0.7rem', color: '#64748B', marginLeft: '6px' }}>
+                            {appliedCoupon.type === 'freeship' ? 'Free delivery' : `₹${discount} off`}
+                          </span>
+                        </div>
+                      </div>
+                      <button onClick={handleRemoveCoupon} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '2px' }}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                          value={couponInput}
+                          onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                          placeholder="Enter coupon code"
+                          style={{ flex: 1, padding: '10px 14px', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.8rem', fontFamily: 'monospace', textTransform: 'uppercase' }}
+                        />
+                        <button onClick={handleApplyCoupon} style={{ padding: '10px 16px', background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                          Apply
+                        </button>
+                      </div>
+                      <button onClick={() => setShowCouponList(!showCouponList)} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#B91C1C', fontSize: '0.75rem', fontWeight: 600, fontFamily: 'inherit', padding: 0 }}>
+                        <Gift size={12} /> View available coupons ({availableCoupons.length})
+                      </button>
+                      {showCouponList && (
+                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #E2E8F0', borderRadius: '10px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: '280px', overflowY: 'auto', marginTop: '4px' }}>
+                          {availableCoupons.filter(c => c.active).map(coupon => {
+                            const eligible = totalPrice >= coupon.minOrder;
+                            const disc = coupon.type === 'freeship' ? 0 : calculateDiscount(coupon, totalPrice);
+                            return (
+                              <div key={coupon.code} onClick={() => eligible && handleSelectCoupon(coupon)} style={{ padding: '12px 14px', borderBottom: '1px solid #F1F5F9', cursor: eligible ? 'pointer' : 'not-allowed', opacity: eligible ? 1 : 0.5, transition: 'background 0.15s' }}
+                                onMouseEnter={(e) => { if (eligible) e.currentTarget.style.background = '#F8FAFC'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                  <span style={{ fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace', color: '#1A1A2E' }}>{coupon.code}</span>
+                                  <span style={{ fontSize: '0.7rem', color: '#B91C1C', fontWeight: 600 }}>
+                                    {coupon.type === 'freeship' ? 'FREE DEL' : disc > 0 ? `₹${disc} OFF` : `${coupon.value}% OFF`}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{coupon.description}</div>
+                                <div style={{ fontSize: '0.65rem', color: '#94A3B8', marginTop: '2px' }}>
+                                  {!eligible ? `Min order ₹${coupon.minOrder.toLocaleString('en-IN')}` : `Expires ${coupon.expires}`}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748B', marginBottom: '6px' }}>
                     <span>Subtotal</span><span>₹{totalPrice.toLocaleString('en-IN')}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748B', marginBottom: '6px' }}>
-                    <span>Shipping</span><span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
+                    <span>Shipping</span><span>{effectiveShipping === 0 ? <span style={{ color: '#16A34A', fontWeight: 600 }}>Free</span> : `₹${shipping}`}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 700, color: '#1A1A2E', marginTop: '8px' }}>
+                  {discount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#16A34A', marginBottom: '6px', fontWeight: 600 }}>
+                      <span>Coupon Discount</span><span>-₹{discount.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {discount > 0 && (
+                    <div style={{ padding: '6px 10px', background: '#F0FDF4', borderRadius: '6px', fontSize: '0.7rem', color: '#16A34A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Check size={12} /> Best coupon auto-applied for maximum savings
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 700, color: '#1A1A2E', marginTop: '8px', borderTop: '1px solid #E2E8F0', paddingTop: '8px' }}>
                     <span>Total</span><span style={{ color: '#B91C1C' }}>₹{total.toLocaleString('en-IN')}</span>
                   </div>
+                  {discount > 0 && (
+                    <div style={{ textAlign: 'center', marginTop: '8px', padding: '6px', background: '#FEF3C7', borderRadius: '6px', fontSize: '0.75rem', color: '#92400E', fontWeight: 600 }}>
+                      You are saving ₹{discount.toLocaleString('en-IN')} on this order!
+                    </div>
+                  )}
                 </div>
               </div>
               <div style={{ marginTop: '16px', padding: '16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>

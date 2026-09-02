@@ -8,6 +8,7 @@ import { getProductsByCategory, getProductsByTag, type Product } from '../data/m
 import StoreLocator from '../components/StoreLocator';
 import Chatbot from '../components/Chatbot';
 import CookieConsent from '../components/CookieConsent';
+import { showToast } from '../components/Toast';
 import './LandingPage.css';
 
 const featuredProducts = [
@@ -765,6 +766,65 @@ export default function LandingPage() {
             ].map((faq, i) => (
               <FAQItem key={i} question={faq.q} answer={faq.a} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* OFFERS & DEALS SECTION */}
+      <section style={{ padding: '80px 0', background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #FCD34D 100%)' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span className="lp-section-tag" style={{ background: '#92400E', color: '#fff', border: 'none' }}>Limited Time</span>
+            <h2 style={{ color: '#92400E' }}>Today's <span style={{ color: '#B91C1C' }}>Best Deals</span></h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#78350F', fontSize: '0.9rem' }}>
+              Grab these exclusive offers before they expire. Use the coupon codes at checkout!
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            {[
+              { code: 'WELCOME20', discount: '20% OFF', desc: 'First order discount for new customers', min: 'Min order ₹1,999', expiry: 'Expires Sep 30, 2026', color: '#B91C1C', bg: '#FEE2E2' },
+              { code: 'BSC500', discount: '₹500 OFF', desc: 'Flat ₹500 off on orders above ₹5,000', min: 'Min order ₹5,000', expiry: 'Expires Oct 15, 2026', color: '#1E3A8A', bg: '#DBEAFE' },
+              { code: 'FESTIVE30', discount: '30% OFF', desc: 'Festive season special on silk sarees', min: 'Min order ₹3,000', expiry: 'Expires Nov 30, 2026', color: '#16A34A', bg: '#DCFCE7' },
+              { code: 'FREEDEL', discount: 'FREE DELIVERY', desc: 'Free shipping on all orders — no minimum', min: 'No minimum order', expiry: 'Expires Sep 15, 2026', color: '#7C3AED', bg: '#EDE9FE' },
+              { code: 'BRIDE10', discount: '10% OFF', desc: 'Special discount on bridal collection', min: 'Min order ₹10,000', expiry: 'Expires Dec 31, 2026', color: '#DB2777', bg: '#FCE7F3' },
+              { code: 'BSC2026', discount: '15% OFF', desc: 'Anniversary special — celebrate with us', min: 'Min order ₹2,500', expiry: 'Expires Oct 31, 2026', color: '#EA580C', bg: '#FFEDD5' },
+            ].map((offer, i) => (
+              <div key={i} className="reveal" style={{ background: '#fff', borderRadius: '14px', overflow: 'hidden', border: '1px solid #FDE68A', position: 'relative' }}>
+                <div style={{ background: offer.color, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff' }}>{offer.discount}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '2px' }}>{offer.desc}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.65rem', color: '#fff', fontWeight: 600, textTransform: 'uppercase' }}>
+                    {offer.expiry.split('Expires ')[1]}
+                  </div>
+                </div>
+                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.7rem', color: '#64748B' }}>Code:</span>
+                      <span style={{ padding: '3px 10px', background: offer.bg, color: offer.color, borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700, fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                        {offer.code}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>{offer.min}</div>
+                  </div>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(offer.code); showToast('success', `Coupon "${offer.code}" copied!`); }}
+                    style={{ padding: '8px 16px', background: offer.color, color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  >
+                    Copy Code
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="reveal" style={{ textAlign: 'center', marginTop: '32px', padding: '16px', background: 'rgba(255,255,255,0.7)', borderRadius: '10px' }}>
+            <p style={{ fontSize: '0.85rem', color: '#92400E', fontWeight: 500 }}>
+              💡 <strong>Auto-Apply:</strong> Eligible coupons are automatically applied at checkout for maximum savings!
+            </p>
           </div>
         </div>
       </section>
