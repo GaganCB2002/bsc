@@ -3,11 +3,12 @@ import { register, login, getMe } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { registerRules, loginRules } from '../validators/authValidator.js';
+import { loginLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 router.post('/register', registerRules, validate, register);
-router.post('/login', loginRules, validate, login);
+router.post('/login', loginLimiter, loginRules, validate, login);
 router.get('/me', protect, getMe);
 
 export default router;

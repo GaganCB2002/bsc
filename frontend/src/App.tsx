@@ -29,6 +29,7 @@ import Marketing from './pages/admin/Marketing';
 import Analytics from './pages/admin/Analytics';
 import Settings from './pages/admin/Settings';
 import NewProduct from './pages/admin/NewProduct';
+import Coupons from './pages/admin/Coupons';
 
 // New Learning LMS Pages
 import LearningPage from './pages/learning/LearningPage';
@@ -54,6 +55,8 @@ function App() {
       <ToastContainer />
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/courses" element={<CategoryPage />} />
+        <Route path="/about" element={<LandingPage />} />
         <Route path="/category/:id" element={<CategoryPage />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/login" element={<Login />} />
@@ -77,6 +80,7 @@ function App() {
 
         {/* Customer Legacy Routes (redirecting to new dashboard) */}
         <Route path="/customer" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/customer/orders" element={<Navigate to="/dashboard/orders" replace />} />
         
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
@@ -90,6 +94,7 @@ function App() {
           <Route path="marketing" element={<Marketing />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="coupons" element={<Coupons />} />
           <Route path="products/new" element={<NewProduct />} />
         </Route>
         

@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { authService } from '../services/authService';
+import { showToast } from '../components/Toast';
 
 interface User {
   _id: string;
@@ -9,14 +10,17 @@ interface User {
   avatar?: string;
   bio?: string;
   phone?: string;
+  age?: number;
+  gender?: string;
+  location?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
-  register: (data: { name: string; email: string; password: string; confirmPassword: string; phone?: string }) => Promise<{ success: boolean; message: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string; isLocked?: boolean; lockedUntil?: string }>;
+  register: (data: { name: string; email: string; password: string; confirmPassword: string; phone?: string; age?: number; gender?: string; location?: string }) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -24,49 +28,117 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
+function getLocalProfile(): Partial<User> {
+  try {
+    const stored = localStorage.getItem('userProfile');
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveLocalProfile(profile: Partial<User>) {
+  localStorage.setItem('userProfile', JSON.stringify(profile));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const hasFetched = useRef(false);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('loginTimestamp');
+    localStorage.removeItem('role');
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  const check24HourExpiry = useCallback(() => {
+    const loginTime = localStorage.getItem('loginTimestamp');
+    if (loginTime) {
+      const elapsed = Date.now() - parseInt(loginTime, 10);
+      if (elapsed >= TWENTY_FOUR_HOURS_MS) {
+        logout();
+        showToast('warning', 'Session expired (24h limit). Please sign in again.');
+        return true;
+      }
+    }
+    return false;
+  }, [logout]);
+
+  const mergeProfile = useCallback((apiUser: User): User => {
+    const local = getLocalProfile();
+    return { ...apiUser, ...local };
+  }, []);
 
   const fetchUser = useCallback(async () => {
     if (!token) {
       setLoading(false);
       return;
     }
+
+    if (check24HourExpiry()) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await authService.getMe();
       if (data.success) {
-        setUser(data.user);
+        const merged = mergeProfile(data.user);
+        setUser(merged);
       } else {
-        localStorage.removeItem('token');
-        setToken(null);
+        logout();
       }
     } catch {
-      localStorage.removeItem('token');
-      setToken(null);
+      logout();
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, check24HourExpiry, logout, mergeProfile]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (hasFetched.current) return;
+    hasFetched.current = true;
     fetchUser();
   }, [fetchUser]);
+
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(() => {
+      check24HourExpiry();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [token, check24HourExpiry]);
 
   const login = async (email: string, password: string) => {
     try {
       const data = await authService.login({ email, password });
       if (data.success) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('loginTimestamp', Date.now().toString());
         setToken(data.token);
-        setUser(data.user);
+        const merged = mergeProfile(data.user);
+        setUser(merged);
         return { success: true, message: data.message };
       }
       return { success: false, message: data.message || 'Login failed' };
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
+      const error = err as { response?: { status?: number, data?: { message?: string; lockedUntil?: string } } };
+      
+      if (error.response?.status === 429) {
+        return {
+          success: false,
+          message: error.response.data?.message || 'Too many login attempts.',
+          isLocked: true,
+          lockedUntil: error.response.data?.lockedUntil || new Date(Date.now() + 15 * 60 * 1000).toISOString()
+        };
+      }
+
       return {
         success: false,
         message: error.response?.data?.message || 'Unable to connect to server',
@@ -74,13 +146,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (formData: { name: string; email: string; password: string; confirmPassword: string; phone?: string }) => {
+  const register = async (formData: { name: string; email: string; password: string; confirmPassword: string; phone?: string; age?: number; gender?: string; location?: string }) => {
     try {
+      const profileData: Partial<User> = {};
+      if (formData.age) profileData.age = formData.age;
+      if (formData.gender) profileData.gender = formData.gender;
+      if (formData.location) profileData.location = formData.location;
+      if (formData.phone) profileData.phone = formData.phone;
+      saveLocalProfile(profileData);
+
       const data = await authService.register(formData);
       if (data.success) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('loginTimestamp', Date.now().toString());
         setToken(data.token);
-        setUser(data.user);
+        const merged = mergeProfile(data.user);
+        merged.age = formData.age;
+        merged.gender = formData.gender;
+        merged.location = formData.location;
+        setUser(merged);
         return { success: true, message: data.message };
       }
       return { success: false, message: data.message || 'Registration failed' };
@@ -89,13 +173,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const msg = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || 'Unable to connect to server';
       return { success: false, message: msg };
     }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role'); // clean up old localStorage auth
-    setToken(null);
-    setUser(null);
   };
 
   return (

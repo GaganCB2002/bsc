@@ -33,7 +33,15 @@ export default async function seedDatabase(exitOnComplete = true) {
       email: 'admin@bschannabasappa.com',
       password: 'Admin123!',
       role: 'admin',
-      bio: 'Platform administrator for BS Channabasappa Learning Academy',
+      bio: 'Platform administrator for BSC Exclusive Learning Academy',
+    });
+
+    await User.create({
+      name: 'Admin',
+      email: 'admin@bscexclusive.com',
+      password: 'Admin123!',
+      role: 'admin',
+      bio: 'Platform administrator for BSC Exclusive Learning Academy',
     });
 
     const user = await User.create({
@@ -44,7 +52,15 @@ export default async function seedDatabase(exitOnComplete = true) {
       bio: 'Passionate learner exploring the world of traditional textiles',
     });
 
-    console.log('Created users:', admin.email, user.email);
+    await User.create({
+      name: 'Gagan',
+      email: 'user@bscexclusive.com',
+      password: 'User123!',
+      role: 'user',
+      bio: 'Passionate learner exploring the world of traditional textiles',
+    });
+
+    console.log('Created users: admin@bscexclusive.com, admin@bschannabasappa.com, user@bscexclusive.com, user@bschannabasappa.com');
 
     // ===================== COURSE 1: Art of Silk Weaving =====================
     const course1 = await Course.create({

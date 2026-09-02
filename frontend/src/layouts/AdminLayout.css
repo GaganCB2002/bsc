@@ -2,18 +2,37 @@
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background-color: #FDF8F3;
-  color: #1A1A2E;
+  background-color: #F8FAFC;
+  color: #1E293B;
 }
 
 .admin-sidebar {
   width: 250px;
   background: #fff;
-  border-right: 1px solid #F1F5F9;
+  border-right: 1px solid #E2E8F0;
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
   flex-shrink: 0;
+  transition: width 0.3s ease;
+}
+
+.admin-sidebar.collapsed {
+  width: 72px;
+  padding: 24px 8px;
+}
+
+.admin-sidebar.collapsed .admin-nav-item {
+  justify-content: center;
+  padding: 12px;
+}
+
+.admin-sidebar.collapsed .admin-nav-item span:not(.nav-icon) {
+  display: none;
+}
+
+.admin-sidebar.collapsed .admin-nav-bottom {
+  align-items: center;
 }
 
 .admin-brand {
@@ -70,11 +89,11 @@
 }
 
 .admin-nav-item:hover {
-  background: #FDF0EA;
+  background: #F1F5F9;
 }
 
 .admin-nav-item.active {
-  background: #FDF0EA;
+  background: #FEE2E2;
   color: #B91C1C;
 }
 
@@ -87,7 +106,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border-top: 1px solid #F1F5F9;
+  border-top: 1px solid #E2E8F0;
   padding-top: 16px;
 }
 
@@ -118,7 +137,7 @@
 .admin-header {
   height: 72px;
   background: #fff;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #E2E8F0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -156,17 +175,15 @@
   gap: 12px;
   font-weight: 600;
   font-size: 0.875rem;
-  border-left: 1px solid #F1F5F9;
+  border-left: 1px solid #E2E8F0;
   padding-left: 24px;
 }
 
 .avatar {
   width: 32px;
   height: 32px;
-  background: #F1F5F9;
+  background: #E2E8F0;
   border-radius: 50%;
-  background-image: url('https://ui-avatars.com/api/?name=Stitch+Admin&background=D4A574&color=fff');
-  background-size: cover;
 }
 
 .view-content {
@@ -189,12 +206,12 @@
 }
 
 .page-title p {
-  color: #8A7A6A;
+  color: #64748B;
   font-size: 0.875rem;
 }
 
 .alert-box {
-  background: #1A1A2E;
+  background: #1E293B;
   color: #fff;
   padding: 16px 24px;
   border-radius: 8px;
@@ -222,7 +239,7 @@
   background: #fff;
   padding: 20px;
   border-radius: 12px;
-  border: 1px solid #F1F5F9;
+  border: 1px solid #E2E8F0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
@@ -230,7 +247,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.75rem;
-  color: #9A8A7A;
+  color: #64748B;
   font-weight: 600;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -244,11 +261,11 @@
 
 .stat-sub {
   font-size: 0.75rem;
-  color: #9A8A7A;
+  color: #64748B;
 }
 
-.badge-green { background: #E8F5E0; color: #3A7A3A; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-.badge-red { background: #FDE8E0; color: #991B1B; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge-green { background: #DCFCE7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge-red { background: #FEE2E2; color: #991B1B; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
 
 .dashboard-grid {
   display: grid;
@@ -259,7 +276,7 @@
 .card {
   background: #fff;
   border-radius: 12px;
-  border: 1px solid #F1F5F9;
+  border: 1px solid #E2E8F0;
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -283,24 +300,24 @@ table {
 th {
   font-size: 0.75rem;
   text-transform: uppercase;
-  color: #9A8A7A;
+  color: #64748B;
   padding-bottom: 12px;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #E2E8F0;
   font-weight: 600;
 }
 
 td {
   padding: 16px 0;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #E2E8F0;
   font-size: 0.875rem;
 }
 
-.status-shipped { background: #E8F5E0; color: #3A7A3A; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-.status-processing { background: #FDF0EA; color: #B91C1C; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-.status-pending { background: #FCF3D3; color: #8A7A3A; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.status-shipped { background: #DCFCE7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.status-processing { background: #FEE2E2; color: #B91C1C; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.status-pending { background: #FEF3C7; color: #92400E; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
 
 .dark-card {
-  background: #1A1A2E;
+  background: #1E293B;
   color: #fff;
   border-radius: 12px;
   padding: 24px;
@@ -314,7 +331,7 @@ td {
 }
 
 .action-item {
-  background: #1A1A2E;
+  background: #1E293B;
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 12px;
@@ -323,11 +340,11 @@ td {
   gap: 12px;
   cursor: pointer;
   transition: background 0.2s;
-  border: 1px solid #3A3330;
+  border: 1px solid #334155;
 }
 
 .action-item:hover {
-  background: #3A3330;
+  background: #334155;
 }
 
 .catalog-grid {
@@ -339,7 +356,7 @@ td {
 .catalog-card {
   background: #fff;
   border-radius: 12px;
-  border: 1px solid #F1F5F9;
+  border: 1px solid #E2E8F0;
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
@@ -364,7 +381,7 @@ td {
 .catalog-stats {
   display: flex;
   gap: 16px;
-  background: #FDF8F3;
+  background: #F8FAFC;
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 16px;
@@ -383,17 +400,17 @@ td {
 
 .catalog-tag {
   background: #F1F5F9;
-  color: #8A7A6A;
+  color: #64748B;
   padding: 6px 12px;
   border-radius: 16px;
   font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid #F1F5F9;
+  border: 1px solid #E2E8F0;
 }
 
 .btn-manage {
   width: 100%;
-  background: #1A1A2E;
+  background: #1E293B;
   color: #fff;
   padding: 12px;
   border-radius: 8px;
@@ -406,7 +423,7 @@ td {
 }
 
 .btn-manage:hover {
-  background: #3A3330;
+  background: #334155;
 }
 
 .col-left {
@@ -425,4 +442,14 @@ td {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.profile-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.profile-email {
+  font-size: 0.75rem;
+  color: #64748B;
 }

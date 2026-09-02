@@ -18,7 +18,7 @@ export default function LearningDashboard() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { document.title = 'Dashboard - BS Channabasappa Academy'; }, []);
+  useEffect(() => { document.title = 'Dashboard - BSC Exclusive'; }, []);
 
   useEffect(() => {
     const load = async () => {

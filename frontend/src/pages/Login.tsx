@@ -12,111 +12,214 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lockoutUntil, setLockoutUntil] = useState<Date | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = 'Sign In - BS Channabasappa Academy';
+    document.title = 'Sign In - BSC Exclusive';
   }, []);
 
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard', { replace: true });
   }, [isAuthenticated, navigate]);
 
+  useEffect(() => {
+    if (!lockoutUntil) return;
+    
+    const updateTimer = () => {
+      const remaining = Math.ceil((lockoutUntil.getTime() - Date.now()) / 1000);
+      if (remaining <= 0) {
+        setLockoutUntil(null);
+        setTimeRemaining(0);
+      } else {
+        setTimeRemaining(remaining);
+      }
+    };
+    
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutUntil]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError('Please fill in all required fields');
       return;
     }
     setLoading(true);
     const result = await login(email, password);
     setLoading(false);
     if (result.success) {
-      showToast('success', 'Welcome back!');
+      showToast('success', 'Welcome back to BSC Exclusive!');
       navigate('/dashboard');
     } else {
+      if (result.isLocked && result.lockedUntil) {
+        setLockoutUntil(new Date(result.lockedUntil));
+      }
       setError(result.message);
     }
   };
 
   return (
     <div className="login-page-container">
-      <div className="login-bg-image" />
+      <div className="login-bg-overlay" />
 
       <div className="login-content-wrapper">
-        <div className="login-form-container">
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <Link to="/" className="login-header-logo">
-              <BrandLogo size={48} variant="gold" />
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E3A8A', lineHeight: 1.2 }}>Channabasappa</div>
-                <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Learning Academy</div>
+        <div className="login-split-card">
+          
+          {/* Left Brand Banner */}
+          <div className="login-left-banner">
+            <div className="login-left-header">
+              <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
+                <BrandLogo size={44} variant="gold" />
+                <div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff', letterSpacing: '0.05em', lineHeight: 1 }}>
+                    BSC EXCLUSIVE
+                  </div>
+                  <div className="login-left-badge">Since 1938</div>
+                </div>
+              </Link>
+            </div>
+
+            <div className="login-left-quote">
+              <blockquote>
+                "Silk is the queen of all textiles — preserving four generations of handloom mastery and Indian heritage."
+              </blockquote>
+              <cite>— Master Weaver Raghu, Davangere</cite>
+            </div>
+
+            <div className="login-left-footer">
+              <div className="login-stat-item">
+                <span>85+ Years</span>
+                <span>Handloom Legacy</span>
               </div>
-            </Link>
-            <h1 className="login-title">Welcome <span style={{ fontWeight: 700, color: '#1E3A8A' }}>Back</span></h1>
-            <p className="login-subtitle">Sign in to continue your learning journey</p>
+              <div className="login-stat-item">
+                <span>100% Pure</span>
+                <span>Certified Silk</span>
+              </div>
+              <div className="login-stat-item">
+                <span>10K+</span>
+                <span>Happy Learners</span>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="login-form-card">
-            {error && (
-              <div className="login-error-alert">
-                {error}
-              </div>
-            )}
-
-            <div className="login-input-group">
-              <label className="login-input-label">Email Address</label>
-              <div className="login-input-wrapper">
-                <Mail size={16} className="login-input-icon" />
-                <input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="you@example.com"
-                  className="login-input-field"
-                />
-              </div>
+          {/* Right Form Area */}
+          <div className="login-right-form">
+            <div style={{ marginBottom: '24px' }}>
+              <h1 className="login-form-title">Welcome Back</h1>
+              <p className="login-form-subtitle">Sign in to access your academy dashboard & masterclasses</p>
             </div>
 
-            <div className="login-input-group" style={{ marginBottom: '24px' }}>
-              <label className="login-input-label">Password</label>
-              <div className="login-input-wrapper">
-                <Lock size={16} className="login-input-icon" />
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="Enter your password"
-                  className="login-input-field.has-right-icon"
-                  style={{ width: '100%', padding: '12px 44px 12px 42px', border: '1.5px solid #E8E0D6', borderRadius: '4px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }}
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="login-toggle-password"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            {lockoutUntil ? (
+              <div className="login-lockout-card">
+                <Lock size={48} className="login-lockout-icon" />
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1A1A2E', margin: '8px 0' }}>Account Paused</h2>
+                <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: 1.5 }}>
+                  Multiple invalid login attempts detected. Please wait for the timer below before trying again.
+                </p>
+                <div className="login-lockout-timer">
+                  {Math.floor(timeRemaining / 60).toString().padStart(2, '0')}:
+                  {(timeRemaining % 60).toString().padStart(2, '0')}
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                {error && (
+                  <div className="login-error-box">
+                    <span>⚠️ {error}</span>
+                  </div>
+                )}
+
+                <div className="login-field">
+                  <label className="login-label">Email Address *</label>
+                  <div className="login-input-wrap">
+                    <Mail size={18} className="login-input-icon" />
+                    <input
+                      type="email"
+                      className="login-input"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="login-field">
+                  <label className="login-label">Password *</label>
+                  <div className="login-input-wrap">
+                    <Lock size={18} className="login-input-icon" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      className="login-input"
+                      placeholder="Enter your password"
+                      value={password}
+                      style={{ paddingRight: '44px' }}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute', right: '14px', background: 'none',
+                        border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: 0
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" disabled={loading} className="login-btn-submit">
+                  {loading ? (
+                    <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Signing in...</>
+                  ) : (
+                    'Sign In to Dashboard'
+                  )}
                 </button>
-              </div>
-            </div>
 
-            <button type="submit" disabled={loading} className="login-submit-btn">
-              {loading ? <><Loader2 size={16} className="login-spin-icon" /> Signing in...</> : 'Sign In'}
-            </button>
+                <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.85rem', color: '#6B7280' }}>
+                  Don't have an account?{' '}
+                  <Link to="/register" style={{ color: '#B91C1C', fontWeight: 700, textDecoration: 'none' }}>
+                    Create Account
+                  </Link>
+                </div>
 
-            <div style={{ textAlign: 'center', marginTop: '24px' }}>
-              <span style={{ color: '#8A7A6A', fontSize: '0.85rem' }}>Don't have an account? </span>
-              <Link to="/register" style={{ color: '#B91C1C', fontWeight: 600, fontSize: '0.85rem' }}>Create Account</Link>
-            </div>
-
-            <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #E8E0D6' }}>
-              <p style={{ color: '#999', fontSize: '0.75rem' }}>Demo Accounts:</p>
-              <p style={{ color: '#666', fontSize: '0.75rem', marginTop: '4px' }}>Admin: admin@bschannabasappa.com / Admin123!</p>
-              <p style={{ color: '#666', fontSize: '0.75rem' }}>User: user@bschannabasappa.com / User123!</p>
-            </div>
-          </form>
+                {/* Auto-fill Demo Accounts */}
+                <div className="login-autofill-section">
+                  <div className="login-autofill-label">Quick Demo Access</div>
+                  <div className="login-autofill-chips">
+                    <button
+                      type="button"
+                      className="login-chip admin"
+                      onClick={() => {
+                        setEmail('admin@bscexclusive.com');
+                        setPassword('Admin123!');
+                        setError('');
+                      }}
+                    >
+                      👑 Admin Demo
+                    </button>
+                    <button
+                      type="button"
+                      className="login-chip user"
+                      onClick={() => {
+                        setEmail('user@bscexclusive.com');
+                        setPassword('User123!');
+                        setError('');
+                      }}
+                    >
+                      👤 Learner Demo
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>
