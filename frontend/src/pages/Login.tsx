@@ -14,7 +14,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [lockoutUntil, setLockoutUntil] = useState<Date | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,8 +22,10 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) navigate('/dashboard', { replace: true });
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated) {
+      navigate(user?.role === 'admin' ? '/admin/overview' : '/', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   useEffect(() => {
     if (!lockoutUntil) return;
@@ -55,7 +57,7 @@ export default function Login() {
     setLoading(false);
     if (result.success) {
       showToast('success', 'Welcome back to BSC Exclusive!');
-      navigate('/dashboard');
+      navigate(result.role === 'admin' ? '/admin/overview' : '/');
     } else {
       if (result.isLocked && result.lockedUntil) {
         setLockoutUntil(new Date(result.lockedUntil));
@@ -69,6 +71,11 @@ export default function Login() {
       <div className="login-bg-overlay" />
 
       <div className="login-content-wrapper">
+        <Link to="/" style={{ position: 'absolute', top: '20px', left: '20px', display: 'flex', alignItems: 'center', gap: '6px', color: '#fff', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500, background: 'rgba(0,0,0,0.3)', padding: '8px 16px', borderRadius: '8px', zIndex: 10, transition: 'background 0.2s' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.5)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.3)'; }}>
+          ← Back to Home
+        </Link>
         <div className="login-split-card">
           
           {/* Left Brand Banner */}
@@ -213,7 +220,7 @@ export default function Login() {
                         setError('');
                       }}
                     >
-                      👤 Learner Demo
+                      👤 Customer Demo
                     </button>
                   </div>
                 </div>

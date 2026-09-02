@@ -10,11 +10,15 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { register, isAuthenticated } = useAuth();
+  const { register, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => { document.title = 'Create Account - BSC Exclusive'; }, []);
-  useEffect(() => { if (isAuthenticated) navigate('/dashboard', { replace: true }); }, [isAuthenticated, navigate]);
+  useEffect(() => { 
+    if (isAuthenticated) {
+      navigate(user?.role === 'admin' ? '/admin/overview' : '/', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -66,8 +70,8 @@ export default function Register() {
     });
     setLoading(false);
     if (result.success) {
-      showToast('success', `Welcome! Your age group: ${getAgeGroup(ageNum)}. We'll show you personalized recommendations.`);
-      navigate('/dashboard');
+      showToast('success', 'Account created successfully! Welcome to BSC Exclusive.');
+      navigate(result.role === 'admin' ? '/admin/overview' : '/');
     } else {
       setError(result.message);
     }

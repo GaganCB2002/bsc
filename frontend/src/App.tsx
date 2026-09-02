@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage';
 import CategoryPage from './pages/CategoryPage';
 import ProductDetails from './pages/ProductDetails';
@@ -7,16 +7,12 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CustomerService from './pages/CustomerService';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Cookies from './pages/Cookies';
 
-import CustomerLayout from './layouts/CustomerLayout';
-import CustomerDashboard from './pages/customer/Dashboard';
-import CustomerOrders from './pages/customer/Orders';
-import CustomerWishlist from './pages/customer/Wishlist';
-import CustomerAddresses from './pages/customer/Addresses';
-import CustomerSettings from './pages/customer/Settings';
+
 
 import AdminLayout from './layouts/AdminLayout';
 import Overview from './pages/admin/Overview';
@@ -30,12 +26,11 @@ import Analytics from './pages/admin/Analytics';
 import Settings from './pages/admin/Settings';
 import NewProduct from './pages/admin/NewProduct';
 import Coupons from './pages/admin/Coupons';
-
-// New Learning LMS Pages
-import LearningPage from './pages/learning/LearningPage';
+import Products from './pages/admin/Products';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import ToastContainer from './components/Toast';
+import DevToolsDetector from './components/DevToolsDetector';
 
 function NotFound() {
   useEffect(() => { document.title = '404 Not Found - BSC Exclusive'; }, []);
@@ -50,12 +45,31 @@ function NotFound() {
 }
 
 function App() {
+  const [devToolsProtection, setDevToolsProtection] = useState(() => {
+    try {
+      const stored = localStorage.getItem('devToolsProtection');
+      return stored !== null ? JSON.parse(stored) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === 'devToolsProtection' && e.newValue !== null) {
+        setDevToolsProtection(JSON.parse(e.newValue));
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, []);
+
   return (
     <BrowserRouter>
+      <DevToolsDetector enabled={devToolsProtection} />
       <ToastContainer />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/courses" element={<CategoryPage />} />
         <Route path="/about" element={<LandingPage />} />
         <Route path="/category/:id" element={<CategoryPage />} />
         <Route path="/product/:id" element={<ProductDetails />} />
@@ -63,29 +77,19 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/customer-service" element={<CustomerService />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/cookies" element={<Cookies />} />
         
-        {/* Auth / LMS Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
-          <Route index element={<CustomerDashboard />} />
-          <Route path="orders" element={<CustomerOrders />} />
-          <Route path="wishlist" element={<CustomerWishlist />} />
-          <Route path="addresses" element={<CustomerAddresses />} />
-          <Route path="settings" element={<CustomerSettings />} />
-        </Route>
-
-        <Route path="/learning/:courseId" element={<ProtectedRoute><LearningPage /></ProtectedRoute>} />
-
-        {/* Customer Legacy Routes (redirecting to new dashboard) */}
-        <Route path="/customer" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/customer/orders" element={<Navigate to="/dashboard/orders" replace />} />
+        {/* Legacy Customer Route (redirecting to home instead of dashboard) */}
+        <Route path="/customer" element={<Navigate to="/" replace />} />
         
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/admin/overview" replace />} />
           <Route path="overview" element={<Overview />} />
+          <Route path="products" element={<Products />} />
           <Route path="catalog" element={<Catalog />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="roles" element={<UserRoles />} />

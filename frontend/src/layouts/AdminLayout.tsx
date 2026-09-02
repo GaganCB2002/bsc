@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Tag, Package, ShoppingCart, 
   Users, Megaphone, LineChart, Settings, 
-  Shield, HelpCircle, LogOut, Search, Bell, BookOpen, Menu, X, Ticket
+  Shield, HelpCircle, LogOut, Search, Bell, Menu, X, Ticket, Box
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './AdminLayout.css';
@@ -70,13 +70,9 @@ export default function AdminLayout() {
             <span className="nav-icon"><LayoutDashboard size={20} /></span>
             {!sidebarCollapsed && <span>Dashboard</span>}
           </NavLink>
-          <NavLink to="/admin/courses" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'} title="Course Manager">
-            <span className="nav-icon"><BookOpen size={20} /></span>
-            {!sidebarCollapsed && <span>Course Manager</span>}
-          </NavLink>
-          <NavLink to="/admin/learners" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'} title="Learner Progress">
-            <span className="nav-icon"><Users size={20} /></span>
-            {!sidebarCollapsed && <span>Learner Progress</span>}
+          <NavLink to="/admin/products" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'} title="Products">
+            <span className="nav-icon"><Box size={20} /></span>
+            {!sidebarCollapsed && <span>Products</span>}
           </NavLink>
           <NavLink to="/admin/catalog" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'} title="Catalog">
             <span className="nav-icon"><Tag size={20} /></span>

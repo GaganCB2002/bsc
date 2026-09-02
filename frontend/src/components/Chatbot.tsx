@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
-import { sendMessageToGemini } from '../services/geminiService';
+import { sendMessageToGemini, clearChatHistory } from '../services/geminiService';
 
 interface Message {
   id: number;
@@ -35,6 +35,14 @@ export default function Chatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleToggle = () => {
+    if (isOpen) {
+      clearChatHistory();
+      setMessages([WELCOME_MESSAGE]);
+    }
+    setIsOpen(!isOpen);
+  };
+
   const handleSend = async (text?: string) => {
     const messageText = text || input.trim();
     if (!messageText) return;
@@ -67,7 +75,7 @@ export default function Chatbot() {
     <>
       {/* Chat Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         style={{
           position: 'fixed',
           bottom: '24px',

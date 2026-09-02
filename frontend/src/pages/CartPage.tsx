@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import { useCart } from '../context/CartContext';
 import { ShoppingBag, Trash2, Plus, Minus, ChevronRight } from 'lucide-react';
@@ -7,6 +7,7 @@ import './LandingPage.css';
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = 'Shopping Cart - BSC Exclusive';
@@ -129,6 +130,7 @@ export default function CartPage() {
                   <span style={{ color: '#B91C1C' }}>₹{(totalPrice + (totalPrice >= 5000 ? 0 : 99)).toLocaleString('en-IN')}</span>
                 </div>
                 <button
+                  onClick={() => navigate('/checkout')}
                   style={{
                     width: '100%', padding: '14px', marginTop: '24px', background: '#B91C1C',
                     color: '#fff', border: 'none', fontSize: '0.8rem', fontWeight: 600,

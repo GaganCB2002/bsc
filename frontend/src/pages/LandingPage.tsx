@@ -1,21 +1,20 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ShoppingBag, Menu, X, ChevronRight, Star, MapPin, Phone, Mail, Award, Shield, Truck, Leaf, Navigation, User, LogOut } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-import { getPersonalizedProducts } from '../data/mockProducts';
-import { getAgeRecommendation } from '../utils/ageRecommendations';
+import { getProductsByCategory, getProductsByTag, type Product } from '../data/mockProducts';
 import StoreLocator from '../components/StoreLocator';
 import Chatbot from '../components/Chatbot';
 import CookieConsent from '../components/CookieConsent';
 import './LandingPage.css';
 
 const featuredProducts = [
-  { id: 'p1', title: 'Royal Crimson Kanchipuram Silk Saree', category: 'Handloom Silk', price: '₹45,000', rating: 4.9, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=600', badge: 'New Arrival' },
-  { id: 'p2', title: 'Golden Zari Banarasi Brocade Saree', category: 'Banarasi Heritage', price: '₹38,500', rating: 4.8, image: 'https://images.unsplash.com/photo-1771654099745-73a4a4d09bcd?auto=format&fit=crop&q=80&w=600', badge: 'Best Seller' },
-  { id: 'p3', title: 'Pure Mulberry Tissue Silk Saree', category: 'Mulberry Special', price: '₹28,900', rating: 4.9, image: 'https://images.unsplash.com/photo-1771654805161-442c6aab7b55?auto=format&fit=crop&q=80&w=600', badge: 'Exclusive' },
-  { id: 'p4', title: 'Emerald Green Temple Border Silk', category: 'Kanchipuram Classic', price: '₹52,000', rating: 5.0, image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=600', badge: 'Heritage' },
+  { id: 'w-1', title: 'Royal Crimson Kanchipuram Silk Saree', category: 'Handloom Silk', price: '₹45,000', rating: 4.9, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=600', badge: 'New Arrival' },
+  { id: 'w-2', title: 'Golden Zari Banarasi Brocade Saree', category: 'Banarasi Heritage', price: '₹38,500', rating: 4.8, image: 'https://images.unsplash.com/photo-1771654099745-73a4a4d09bcd?auto=format&fit=crop&q=80&w=600', badge: 'Best Seller' },
+  { id: 'w-3', title: 'Pure Mulberry Tissue Silk Saree', category: 'Mulberry Special', price: '₹28,900', rating: 4.9, image: 'https://images.unsplash.com/photo-1771654805161-442c6aab7b55?auto=format&fit=crop&q=80&w=600', badge: 'Exclusive' },
+  { id: 'w-4', title: 'Emerald Green Temple Border Silk', category: 'Kanchipuram Classic', price: '₹52,000', rating: 5.0, image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=600', badge: 'Heritage' },
 ];
 
 const collections = [
@@ -36,23 +35,28 @@ const heroImages = Object.values(modules).map((mod: any) => mod.default);
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+
+  const newArrivals = useMemo(() => getProductsByCategory('new-arrivals').slice(0, 8), []);
+  const bestsellers = useMemo(() => getProductsByCategory('bestsellers').slice(0, 4), []);
+  const menCollection = useMemo(() => getProductsByCategory('men').slice(0, 4), []);
+  const kidsCollection = useMemo(() => getProductsByCategory('kids').slice(0, 4), []);
+  const weddingProducts = useMemo(() => getProductsByTag('wedding').slice(0, 4), []);
+  const festiveProducts = useMemo(() => getProductsByTag('festive').slice(0, 4), []);
   const [slideIndex, setSlideIndex] = useState(0);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const { totalItems } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [showStores, setShowStores] = useState(false);
-
-  const personalizedProducts = useMemo(() => {
-    if (isAuthenticated && user?.age && user?.gender) {
-      return getPersonalizedProducts(user.age, user.gender, 8);
-    }
-    return [];
-  }, [isAuthenticated, user]);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 60);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 60);
+      setShowBackToTop(window.scrollY > 600);
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -65,22 +69,73 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('revealed');
-            observerRef.current?.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -60px 0px' }
-    );
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     const els = document.querySelectorAll('.reveal');
-    els.forEach(el => observerRef.current?.observe(el));
-    return () => observerRef.current?.disconnect();
+    els.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
   }, []);
+
+  const renderProductGrid = (products: Product[]) => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+      {products.map((product) => (
+        <div key={product.id} className="reveal" style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #F0EBE5', transition: 'all 0.3s' }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+          <div style={{ position: 'relative' }}>
+            <Link to={`/product/${product.id}`}>
+              <img src={product.image} alt={product.name} style={{ width: '100%', height: '240px', objectFit: 'cover' }} />
+            </Link>
+            <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {product.isNew && <span style={{ background: '#16a34a', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 700 }}>NEW</span>}
+              {product.isBestseller && <span style={{ background: '#B91C1C', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 700 }}>BESTSELLER</span>}
+              {product.isSale && <span style={{ background: '#f59e0b', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 700 }}>SALE</span>}
+            </div>
+            <button onClick={() => {
+              if (isInWishlist(product.id)) { removeFromWishlist(product.id); }
+              else { addToWishlist({ id: product.id, name: product.name, price: product.price, image: product.image, category: product.category, description: product.description, comparePrice: product.comparePrice }); }
+            }} style={{ position: 'absolute', top: '8px', right: '8px', width: '32px', height: '32px', background: '#fff', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <span style={{ color: isInWishlist(product.id) ? '#B91C1C' : '#94A3B8', fontSize: '1rem' }}>{isInWishlist(product.id) ? '♥' : '♡'}</span>
+            </button>
+          </div>
+          <div style={{ padding: '16px' }}>
+            <span style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A89888', fontWeight: 500 }}>{product.subcategory || product.category}</span>
+            <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B', margin: '4px 0', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</h4>
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={12} fill={i < Math.floor(product.rating) ? '#F59E0B' : '#E5E7EB'} color={i < Math.floor(product.rating) ? '#F59E0B' : '#E5E7EB'} />
+              ))}
+              <span style={{ fontSize: '0.7rem', color: '#94A3B8', marginLeft: '4px' }}>({product.reviews})</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px' }}>
+              <span style={{ fontWeight: 700, fontSize: '1rem', color: '#B91C1C' }}>₹{product.price.toLocaleString('en-IN')}</span>
+              {product.comparePrice && (
+                <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through' }}>₹{product.comparePrice.toLocaleString('en-IN')}</span>
+              )}
+              {product.comparePrice && product.comparePrice > product.price && (
+                <span style={{ fontSize: '0.65rem', color: '#16a34a', fontWeight: 600 }}>{Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}% OFF</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Link to={`/product/${product.id}`} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '8px', background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>
+                <ShoppingBag size={13} /> View Details
+              </Link>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   useEffect(() => {
     document.title = 'BSC Exclusive - Premium Handloom Since 1938';
@@ -104,12 +159,11 @@ export default function LandingPage() {
             </div>
           </Link>
           <nav className="lp-nav">
-            <Link to="/courses">All Courses</Link>
-            <Link to="/courses?category=silk">Silk Weaving</Link>
-            <Link to="/courses?category=business">Business</Link>
-            <Link to="/courses?category=care">Fabric Care</Link>
-            <a href="#about">About Us</a>
-            <a href="#contact">Contact</a>
+            <Link to="/category/women">Women</Link>
+            <Link to="/category/men">Men</Link>
+            <Link to="/category/kids">Kids</Link>
+            <Link to="/category/new-arrivals">New Arrivals</Link>
+            <Link to="/customer-service">Contact</Link>
           </nav>
           <div className="lp-header-actions">
             <Link to="/category/new-arrivals?search=1" className="lp-icon-btn" aria-label="Search"><Search size={18} /></Link>
@@ -161,20 +215,22 @@ export default function LandingPage() {
       {menuOpen && (
         <div className="lp-mobile-menu">
           <div className="lp-mobile-header">
-            <div style={{ background: '#fff', padding: '4px 8px' }}>
-              <img src="/bsc-logo.png" alt="BSC" style={{ height: '32px' }} />
-            </div>
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              <div style={{ background: '#fff', padding: '4px 8px', borderRadius: '50%', overflow: 'hidden', width: '32px', height: '32px', flexShrink: 0 }}>
+                <img src="/bsc-logo.png" alt="BSC" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#1A1A2E', letterSpacing: '0.04em' }}>BSC EXCLUSIVE</span>
+            </Link>
             <button onClick={() => setMenuOpen(false)} aria-label="Close">
               <X size={24} />
             </button>
           </div>
           <nav className="lp-mobile-nav">
-            <Link to="/courses" onClick={() => setMenuOpen(false)}>All Courses</Link>
-            <Link to="/courses?category=silk" onClick={() => setMenuOpen(false)}>Silk Weaving</Link>
-            <Link to="/courses?category=business" onClick={() => setMenuOpen(false)}>Business</Link>
-            <Link to="/courses?category=care" onClick={() => setMenuOpen(false)}>Fabric Care</Link>
-            <a href="#about" onClick={() => setMenuOpen(false)}>About Us</a>
-            <a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
+            <Link to="/category/women" onClick={() => setMenuOpen(false)}>Women</Link>
+            <Link to="/category/men" onClick={() => setMenuOpen(false)}>Men</Link>
+            <Link to="/category/kids" onClick={() => setMenuOpen(false)}>Kids</Link>
+            <Link to="/category/new-arrivals" onClick={() => setMenuOpen(false)}>New Arrivals</Link>
+            <Link to="/customer-service" onClick={() => setMenuOpen(false)}>Contact</Link>
           </nav>          <div className="lp-mobile-actions">
             {isAuthenticated && user ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
@@ -208,11 +264,11 @@ export default function LandingPage() {
             <span className="lp-hero-highlight">BSC</span> Exclusive
           </h1>
           <p className="lp-hero-desc reveal">
-            Authentic handloom silk sarees and traditional ethnic wear — crafted by master weavers and cherished by connoisseurs for four generations.
+            Authentic handloom silk sarees and traditional ethnic wear — curated from 200+ master weavers across Karnataka, Tamil Nadu, and Uttar Pradesh. Trusted by 10,000+ families since 1938.
           </p>
           <div className="lp-hero-buttons reveal">
-            <Link to="/courses" className="lp-btn-primary lp-btn-lg">
-              Explore Masterclasses <ChevronRight size={16} />
+            <Link to="/category/new-arrivals" className="lp-btn-primary lp-btn-lg">
+              Shop New Arrivals <ChevronRight size={16} />
             </Link>
             <a href="#legacy" className="lp-btn-outline lp-btn-light lp-btn-lg">
               Our Legacy
@@ -271,126 +327,67 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PERSONALIZED RECOMMENDATIONS SECTION */}
-      {isAuthenticated && user?.age && personalizedProducts.length > 0 && (
-        <section style={{ background: 'linear-gradient(135deg, #FFF5F5 0%, #FFFFFF 100%)', padding: '60px 0' }}>
-          <div className="container">
-            <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <span className="lp-section-tag" style={{ background: '#B91C1C', color: '#fff' }}>
-                For You, {user.name?.split(' ')[0]}
-              </span>
-              <h2>Recommended for <span className="lp-text-accent">{getAgeRecommendation(user.age).label}</span></h2>
-              <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
-                {getAgeRecommendation(user.age).description}
-              </p>
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
-                {getAgeRecommendation(user.age).tags.slice(0, 4).map(tag => (
-                  <span key={tag} style={{ background: '#FEE2E2', color: '#B91C1C', padding: '4px 12px', borderRadius: '16px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'capitalize' }}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-              {personalizedProducts.map((product) => (
-                <div key={product.id} className="reveal" style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', transition: 'all 0.3s' }}>
-                  <div style={{ position: 'relative' }}>
-                    <Link to={`/product/${product.id}`}>
-                      <img src={product.image} alt={product.name} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
-                    </Link>
-                    <button onClick={() => {
-                      if (isInWishlist(product.id)) { removeFromWishlist(product.id); }
-                      else { addToWishlist({ id: product.id, name: product.name, price: product.price, image: product.image, category: product.category, description: product.description, comparePrice: product.comparePrice }); }
-                    }} style={{ position: 'absolute', top: '10px', right: '10px', width: '32px', height: '32px', background: '#fff', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                      <span style={{ color: isInWishlist(product.id) ? '#B91C1C' : '#94A3B8' }}>♥</span>
-                    </button>
-                  </div>
-                  <div style={{ padding: '14px' }}>
-                    <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#B91C1C', fontWeight: 600 }}>{product.category}</span>
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B', margin: '4px 0', lineHeight: 1.3 }}>{product.name}</h4>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                      <span style={{ fontWeight: 700, color: '#B91C1C' }}>₹{product.price.toLocaleString('en-IN')}</span>
-                      {product.comparePrice && (
-                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through' }}>₹{product.comparePrice.toLocaleString('en-IN')}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ textAlign: 'center', marginTop: '28px' }}>
-              <Link to="/category/new-arrivals" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: '#B91C1C', color: '#fff', textDecoration: 'none', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
-                View More Recommendations <ChevronRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* FEATURED PRODUCTS & HANDLOOM SHOWCASE SECTION */}
       <section className="lp-collections" style={{ background: '#FAF7F2', padding: '80px 0' }}>
         <div className="container">
           <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
             <span className="lp-section-tag">Featured Masterpieces</span>
-            <h2>Exclusive <span className="lp-text-accent">Handloom Collections</span> & Courses</h2>
+            <h2>Exclusive <span className="lp-text-accent">Handloom Collections</span></h2>
             <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#666', fontSize: '0.95rem' }}>
-              Explore our handwoven silk sarees and comprehensive textile courses crafted by master artisans since 1938.
+              Explore our handwoven silk sarees crafted by master artisans since 1938.
             </p>
           </div>
 
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '28px', marginTop: '32px'
-          }}>
-            {featuredProducts.map((product) => (
-              <div key={product.id} className="reveal" style={{
-                background: '#fff', borderRadius: '12px', overflow: 'hidden',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.06)', transition: 'all 0.3s ease',
-                display: 'flex', flexDirection: 'column'
-              }}>
-                <div style={{ position: 'relative', height: '260px', overflow: 'hidden' }}>
-                  <img
-                    src={product.image}
-                    alt={product.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
-                  />
-                  <span style={{
-                    position: 'absolute', top: '14px', left: '14px', background: '#B91C1C', color: '#fff',
-                    fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', borderRadius: '12px',
-                    textTransform: 'uppercase', letterSpacing: '0.05em'
-                  }}>
-                    {product.badge}
-                  </span>
-                </div>
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <span style={{ fontSize: '0.75rem', color: '#1E3A8A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {product.category}
-                  </span>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1A1A2E', margin: '8px 0', lineHeight: 1.3 }}>
-                    {product.title}
-                  </h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
-                    <Star size={15} fill="#F59E0B" color="#F59E0B" />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1A1A2E' }}>{product.rating}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#888' }}>(Verified Artisan)</span>
-                  </div>
-                  <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '14px', borderTop: '1px solid #F1F5F9' }}>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#B91C1C' }}>{product.price}</span>
-                    <Link
-                      to="/courses"
-                      style={{
-                        background: '#1A1A2E', color: '#fff', textDecoration: 'none',
-                        padding: '8px 16px', borderRadius: '6px', fontSize: '0.8rem',
-                        fontWeight: 600, transition: 'background 0.2s'
-                      }}
-                    >
-                      Explore & Enroll
+          <div className="marquee-container" style={{ marginTop: '32px' }}>
+            <div className="marquee-content">
+              {/* Duplicate array for seamless infinite scroll loop */}
+              {[...featuredProducts, ...featuredProducts].map((product, idx) => (
+                <div key={`${product.id}-${idx}`} className="card-3d">
+                  <div className="card-3d-inner">
+                    <Link to={`/product/${product.id}`} style={{ position: 'relative', height: '260px', overflow: 'hidden', display: 'block' }}>
+                      <img
+                        src={product.image}
+                        alt={product.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <span style={{
+                        position: 'absolute', top: '14px', left: '14px', background: '#B91C1C', color: '#fff',
+                        fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', borderRadius: '12px',
+                        textTransform: 'uppercase', letterSpacing: '0.05em'
+                      }}>
+                        {product.badge}
+                      </span>
                     </Link>
+                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                      <span style={{ fontSize: '0.75rem', color: '#1E3A8A', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {product.category}
+                      </span>
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1A1A2E', margin: '8px 0', lineHeight: 1.3 }}>
+                        {product.title}
+                      </h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
+                        <Star size={15} fill="#F59E0B" color="#F59E0B" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1A1A2E' }}>{product.rating}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#888' }}>(Verified Artisan)</span>
+                      </div>
+                      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '14px', borderTop: '1px solid #F1F5F9' }}>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#B91C1C' }}>{product.price}</span>
+                        <Link
+                          to={`/product/${product.id}`}
+                          style={{
+                            background: '#1A1A2E', color: '#fff', textDecoration: 'none',
+                            padding: '8px 16px', borderRadius: '6px', fontSize: '0.8rem',
+                            fontWeight: 600, transition: 'background 0.2s'
+                          }}
+                        >
+                          View Details
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -409,12 +406,221 @@ export default function LandingPage() {
                 <div className="lp-collection-img">
                   <img src={col.image} alt={col.title} />
                   <div className="lp-collection-overlay">
-                    <Link to="/courses" className="lp-collection-link">Explore <ChevronRight size={14} /></Link>
+                    <Link to={i === 0 ? "/category/women" : i === 1 ? "/category/women" : "/category/men"} className="lp-collection-link">Explore <ChevronRight size={14} /></Link>
                   </div>
                 </div>
                 <h3>{col.title}</h3>
                 <p>{col.desc}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* NEW ARRIVALS SECTION */}
+      <section style={{ padding: '80px 0', background: '#fff' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span className="lp-section-tag">Fresh Collection</span>
+            <h2>New <span className="lp-text-accent">Arrivals</span></h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
+              Discover our latest handloom silk sarees and ethnic wear additions.
+            </p>
+          </div>
+          {renderProductGrid(newArrivals)}
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <Link to="/category/new-arrivals" className="lp-btn-primary">View All New Arrivals</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* MEN'S HERITAGE COLLECTION */}
+      <section style={{ padding: '80px 0', background: '#F8FAFC' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span className="lp-section-tag">For Him</span>
+            <h2>Men's <span className="lp-text-accent">Heritage Wear</span></h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
+              Premium kurtas, sherwanis, and jackets crafted for the modern Indian man.
+            </p>
+          </div>
+          {renderProductGrid(menCollection)}
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <Link to="/category/men" className="lp-btn-primary">Shop Men's Collection</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* KIDS FESTIVE WEAR */}
+      <section style={{ padding: '80px 0', background: '#fff' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span className="lp-section-tag">Little Royals</span>
+            <h2>Kids <span className="lp-text-accent">Festive Wear</span></h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
+              Adorable, comfortable, and traditional outfits for your little ones.
+            </p>
+          </div>
+          {renderProductGrid(kidsCollection)}
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <Link to="/category/kids" className="lp-btn-primary">Shop Kids Wear</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* BESTSELLERS SECTION */}
+      <section style={{ padding: '80px 0', background: '#F8FAFC' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span className="lp-section-tag">Most Popular</span>
+            <h2>Our <span className="lp-text-accent">Bestsellers</span></h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
+              Loved by thousands of customers across India. These are the pieces everyone is talking about.
+            </p>
+          </div>
+          {renderProductGrid(bestsellers)}
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <Link to="/category/bestsellers" className="lp-btn-primary">View All Bestsellers</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* SHOP BY OCCASION */}
+      <section style={{ padding: '80px 0', background: '#fff' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span className="lp-section-tag">Shop by Occasion</span>
+            <h2>Find the Perfect <span className="lp-text-accent">Look</span></h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+            {[
+              { tag: 'wedding', label: 'Wedding', icon: '💍', desc: 'Bridal & trousseau', color: '#B91C1C' },
+              { tag: 'festive', label: 'Festive', icon: '🪔', desc: 'Puja & celebrations', color: '#D97706' },
+              { tag: 'party', label: 'Party', icon: '✨', desc: 'Cocktail & evening', color: '#7C3AED' },
+              { tag: 'casual', label: 'Casual', icon: '🌿', desc: 'Everyday elegance', color: '#059669' },
+              { tag: 'office', label: 'Office', icon: '💼', desc: 'Professional wear', color: '#1E3A8A' },
+              { tag: 'traditional', label: 'Traditional', icon: '🙏', desc: 'Heritage classics', color: '#9333EA' },
+            ].map((occ, i) => (
+              <Link key={i} to={`/category/new-arrivals?search=${occ.tag}`} className="reveal" style={{ textDecoration: 'none' }}>
+                <div style={{ padding: '28px 20px', background: '#fff', borderRadius: '12px', textAlign: 'center', border: '1px solid #F0EBE5', cursor: 'pointer', transition: 'all 0.3s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = occ.color; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#F0EBE5'; }}>
+                  <div style={{ fontSize: '2.2rem', marginBottom: '10px' }}>{occ.icon}</div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B', marginBottom: '4px' }}>{occ.label}</h3>
+                  <p style={{ fontSize: '0.78rem', color: '#64748B' }}>{occ.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* WEDDING & FESTIVE SHOWCASE */}
+      <section style={{ padding: '80px 0', background: 'linear-gradient(135deg, #FDF2F8 0%, #FFF7ED 100%)' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span className="lp-section-tag">Wedding Season</span>
+            <h2>Special <span className="lp-text-accent">Bridal Collection</span></h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
+              Curated silk sarees and lehengas for the most special day of your life.
+            </p>
+          </div>
+          {renderProductGrid(weddingProducts)}
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <Link to="/category/women" className="lp-btn-primary">Explore Bridal Collection</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FESTIVE COLLECTION */}
+      <section style={{ padding: '80px 0', background: '#FAF7F2' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span className="lp-section-tag">Festive Special</span>
+            <h2>Celebrate in <span className="lp-text-accent">Style</span></h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
+              Colorful, vibrant outfits perfect for pujas, Diwali, Eid, and every celebration.
+            </p>
+          </div>
+          {renderProductGrid(festiveProducts)}
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <Link to="/category/new-arrivals?search=festive" className="lp-btn-primary">Shop Festive Collection</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* WHY CHOOSE US SECTION */}
+      <section style={{ padding: '80px 0', background: '#F8FAFC' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span className="lp-section-tag">Why Choose Us</span>
+            <h2>The <span className="lp-text-accent">BSC Exclusive</span> Promise</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px' }}>
+            {[
+              { icon: '🏆', title: '100% Authentic Silk', desc: 'GI-tagged genuine silk sourced directly from certified sericulture farms in Karnataka.' },
+              { icon: '🤝', title: 'Direct from Weavers', desc: 'No middlemen. We partner with 200+ master weavers across South India.' },
+              { icon: '🔒', title: 'Secure Payments', desc: 'UPI, Razorpay, and Cash on Delivery — your money is always safe.' },
+              { icon: '🚚', title: 'Pan-India Delivery', desc: 'Free shipping on orders above ₹5,000. Delivered to your doorstep.' },
+              { icon: '💎', title: 'Quality Guaranteed', desc: 'Every saree undergoes 6-point quality check before dispatch.' },
+              { icon: '↩️', title: 'Easy Returns', desc: '7-day return policy for unused items with original tags.' },
+            ].map((item, i) => (
+              <div key={i} className="reveal" style={{ padding: '28px 20px', background: '#fff', borderRadius: '12px', textAlign: 'center', border: '1px solid #F0EBE5' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>{item.icon}</div>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', marginBottom: '8px' }}>{item.title}</h3>
+                <p style={{ fontSize: '0.82rem', color: '#64748B', lineHeight: 1.6 }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* STORE LOCATIONS BANNER */}
+      <section style={{ padding: '60px 0', background: '#1E293B' }}>
+        <div className="container">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '32px', alignItems: 'center' }}>
+            <div className="reveal">
+              <span style={{ fontSize: '0.7rem', color: '#F59E0B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Visit Us</span>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginTop: '8px', marginBottom: '12px' }}>Our Physical Stores</h2>
+              <p style={{ fontSize: '0.85rem', color: '#94A3B8', lineHeight: 1.7 }}>Experience the richness of our handloom collections in person. Visit any of our three showrooms in Karnataka.</p>
+            </div>
+            {[
+              { city: 'Davangere', addr: 'Medical College Road, Davangere - 577004', phone: '+91 8192 272180' },
+              { city: 'Belgaum', addr: 'Tilakwadi, Belgaum - 590006', phone: '+91 8192 272180' },
+              { city: 'Shivamogga', addr: 'B.H. Road, Shivamogga - 577201', phone: '+91 8192 272180' },
+            ].map((store, i) => (
+              <div key={i} className="reveal" style={{ padding: '20px', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#F59E0B', marginBottom: '6px' }}>{store.city}</h3>
+                <p style={{ fontSize: '0.8rem', color: '#CBD5E1', marginBottom: '4px' }}>{store.addr}</p>
+                <p style={{ fontSize: '0.8rem', color: '#CBD5E1' }}>{store.phone}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CATEGORIES BANNER */}
+      <section style={{ padding: '80px 0', background: '#fff' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span className="lp-section-tag">Shop by Category</span>
+            <h2>Explore Our <span className="lp-text-accent">Collections</span></h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+            {[
+              { title: 'Women\'s Sarees', link: '/category/women', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=600', desc: 'Silk, Cotton, Designer & More' },
+              { title: 'Men\'s Ethnic', link: '/category/men', image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&q=80&w=600', desc: 'Kurtas, Sherwanis & Jackets' },
+              { title: 'Kids Wear', link: '/category/kids', image: 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?auto=format&fit=crop&q=80&w=600', desc: 'Traditional & Festive Collections' },
+              { title: 'New Arrivals', link: '/category/new-arrivals', image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=600', desc: 'Fresh Designs Every Week' },
+            ].map((cat, i) => (
+              <Link key={i} to={cat.link} className="reveal" style={{ display: 'block', position: 'relative', borderRadius: '12px', overflow: 'hidden', textDecoration: 'none', height: '220px' }}>
+                <img src={cat.image} alt={cat.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)' }} />
+                <div style={{ position: 'absolute', bottom: '20px', left: '20px', color: '#fff' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>{cat.title}</h3>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.85 }}>{cat.desc}</p>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -485,16 +691,109 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* BRIDAL CONSULTATION CTA */}
+      <section style={{ padding: '80px 0', background: 'linear-gradient(135deg, #B91C1C 0%, #991B1B 50%, #7F1D1D 100%)' }}>
+        <div className="container">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '32px' }}>
+            <div className="reveal" style={{ maxWidth: '550px' }}>
+              <span style={{ fontSize: '0.7rem', color: '#FCD34D', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Personalized Service</span>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginTop: '8px', marginBottom: '12px', lineHeight: 1.3 }}>Bridal Silk Consultation</h2>
+              <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7 }}>Planning your wedding? Our expert consultants will help you choose the perfect silk saree for your special day. From Kanchipuram classics to contemporary designer pieces.</p>
+            </div>
+            <div className="reveal" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <a href="tel:+918192272180" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 28px', background: '#fff', color: '#B91C1C', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center' }}>
+                📞 Call: +91 8192 272180
+              </a>
+              <Link to="/customer-service" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 28px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center' }}>
+                Book Appointment
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* NEWSLETTER SECTION */}
       <section className="lp-newsletter" id="contact">
         <div className="container">
-          <div className="lp-newsletter-content reveal">
+          <div className="lp-newsletter-content">
             <h2>Stay Connected</h2>
             <p>Be the first to know about new collections, exclusive offers, and weaving traditions.</p>
-            <form className="lp-newsletter-form" onSubmit={(e) => e.preventDefault()}>
-              <input type="email" placeholder="Enter your email address" required />
-              <button type="submit" className="lp-btn-primary">Subscribe</button>
-            </form>
+            {!newsletterSubmitted ? (
+              <form className="lp-newsletter-form" onSubmit={(e) => {
+                e.preventDefault();
+                if (newsletterEmail && newsletterEmail.includes('@')) {
+                  setNewsletterSubmitted(true);
+                  setNewsletterEmail('');
+                }
+              }}>
+                <input 
+                  type="email" 
+                  placeholder="Enter your email address" 
+                  required
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  style={{ flex: 1, padding: '16px 20px', border: 'none', fontSize: '0.9rem', borderRadius: '4px 0 0 4px', outline: 'none' }}
+                />
+                <button type="submit" style={{ 
+                  padding: '16px 32px', 
+                  background: '#1E293B', 
+                  color: '#fff', 
+                  border: 'none', 
+                  borderRadius: '0 4px 4px 0', 
+                  fontSize: '0.85rem', 
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}>
+                  Subscribe
+                </button>
+              </form>
+            ) : (
+              <div style={{
+                background: 'rgba(255,255,255,0.15)',
+                borderRadius: '12px',
+                padding: '24px 32px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                marginTop: '20px',
+              }}>
+                <div style={{ 
+                  width: '48px', 
+                  height: '48px', 
+                  background: '#fff', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontSize: '1.5rem',
+                  color: '#16A34A',
+                  fontWeight: 'bold'
+                }}>✓</div>
+                <div style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem' }}>Thank you for subscribing!</div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>You'll receive updates about new collections and exclusive offers.</div>
+                <button 
+                  onClick={() => setNewsletterSubmitted(false)}
+                  style={{
+                    marginTop: '12px',
+                    background: 'transparent',
+                    border: '2px solid rgba(255,255,255,0.5)',
+                    color: '#fff',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 500,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  Subscribe another email
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -504,9 +803,13 @@ export default function LandingPage() {
         <div className="container">
           <div className="lp-footer-grid">
             <div className="lp-footer-brand">
-              <Link to="/" className="lp-logo" style={{ gap: '10px', marginBottom: '12px' }}>
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+              <Link to="/" className="lp-logo" style={{ gap: '10px', marginBottom: '12px', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
                   <img src="/bsc-logo.png" alt="BSC Exclusive" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', letterSpacing: '0.04em' }}>BSC EXCLUSIVE</div>
+                  <div style={{ fontSize: '0.6rem', color: '#94A3B8', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Since 1938</div>
                 </div>
               </Link>
               <p>India's premier destination for authentic handloom silk sarees and traditional ethnic wear, serving connoisseurs of fine craftsmanship since 1938.</p>
@@ -526,21 +829,21 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="lp-footer-col">
-              <h4>Academy & Courses</h4>
+              <h4>Shop</h4>
               <ul>
-                <li><Link to="/courses?category=silk">Silk Weaving Masterclass</Link></li>
-                <li><Link to="/courses?category=care">Saree Care & Storage</Link></li>
-                <li><Link to="/courses?category=business">Textile Business Economics</Link></li>
-                <li><Link to="/courses">All Courses</Link></li>
+                <li><Link to="/category/women">Women's Collection</Link></li>
+                <li><Link to="/category/men">Men's Collection</Link></li>
+                <li><Link to="/category/kids">Kids' Collection</Link></li>
+                <li><Link to="/category/new-arrivals">New Arrivals</Link></li>
               </ul>
             </div>
             <div className="lp-footer-col">
               <h4>Customer Service</h4>
               <ul>
-                <li><a href="#about">About Academy</a></li>
-                <li><a href="#contact">Contact Support</a></li>
-                <li><a href="/terms">Terms & Conditions</a></li>
-                <li><a href="/privacy">Privacy Policy</a></li>
+                <li><Link to="/customer-service">Contact Support</Link></li>
+                <li><Link to="/terms">Terms & Conditions</Link></li>
+                <li><Link to="/privacy">Privacy Policy</Link></li>
+                <li><Link to="/cookies">Cookie Policy</Link></li>
               </ul>
             </div>
             <div className="lp-footer-col">
@@ -604,6 +907,41 @@ export default function LandingPage() {
       {showStores && <StoreLocator onClose={() => setShowStores(false)} />}
       <Chatbot />
       <CookieConsent />
+      
+      {/* WHATSAPP FLOATING BUTTON */}
+      <a
+        href="https://wa.me/918192272180?text=Hi%2C%20I%27m%20interested%20in%20BSC%20Exclusive%20products"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'fixed', bottom: '24px', right: '24px', zIndex: 999,
+          width: '56px', height: '56px', borderRadius: '50%',
+          background: '#25D366', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 4px 20px rgba(37,211,102,0.4)', textDecoration: 'none'
+        }}
+        title="Chat on WhatsApp"
+      >
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </a>
+
+      {/* BACK TO TOP */}
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          style={{
+            position: 'fixed', bottom: '90px', right: '24px', zIndex: 998,
+            width: '44px', height: '44px', borderRadius: '50%',
+            background: '#1E293B', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.2)', border: 'none', cursor: 'pointer',
+            transition: 'opacity 0.3s'
+          }}
+          title="Back to top"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+      )}
     </div>
   );
 }

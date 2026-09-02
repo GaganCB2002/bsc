@@ -24,8 +24,12 @@ export default function PublicHeader() {
   return (
     <header className="lp-header scrolled" style={{ position: 'relative', background: '#fff' }}>
       <div className="lp-header-inner">
-        <Link to="/" className="lp-logo" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="lp-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <BrandLogo size={36} variant="dark" />
+          <div style={{ lineHeight: 1 }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1A1A2E', letterSpacing: '0.04em' }}>BSC EXCLUSIVE</div>
+            <div style={{ fontSize: '0.55rem', color: '#8A7A6A', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 500 }}>Since 1938</div>
+          </div>
         </Link>
         <nav className="lp-nav">
           <Link to="/category/women">Women</Link>

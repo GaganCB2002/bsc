@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Megaphone, Mail, MessageSquare, PlayCircle, Plus, Send, Clock, PauseCircle } from 'lucide-react';
 
 export default function Marketing() {
   useEffect(() => {
@@ -6,92 +7,103 @@ export default function Marketing() {
   }, []);
 
   const campaigns = [
-    { id: 'CAMP-01', name: 'Diwali Festive Sale', status: 'Active', spend: 45000, revenue: 215000, roas: '4.78x' },
-    { id: 'CAMP-02', name: 'Summer Bridal Collection', status: 'Completed', spend: 120000, revenue: 850000, roas: '7.08x' },
-    { id: 'CAMP-03', name: 'New Arrivals - Men', status: 'Active', spend: 15000, revenue: 42000, roas: '2.80x' },
-    { id: 'CAMP-04', name: 'Retargeting - Cart Abandoners', status: 'Active', spend: 8000, revenue: 54000, roas: '6.75x' },
+    { id: 1, name: 'Diwali Festive Sale', channel: 'Email', status: 'Scheduled', reach: '15,000', openRate: '-', date: 'Oct 15, 2026', type: <Mail size={16} /> },
+    { id: 2, name: 'New Bridal Collection', channel: 'SMS', status: 'Sent', reach: '5,200', openRate: '92%', date: 'Sep 1, 2026', type: <MessageSquare size={16} /> },
+    { id: 3, name: 'Welcome Series (Automated)', channel: 'Email', status: 'Active', reach: '450/mo', openRate: '68%', date: 'Ongoing', type: <PlayCircle size={16} /> },
+    { id: 4, name: 'Summer Clearance', channel: 'Email', status: 'Paused', reach: '12,000', openRate: '45%', date: 'Aug 10, 2026', type: <PauseCircle size={16} /> },
   ];
 
   return (
     <>
       <div className="page-header">
         <div className="page-title">
-          <h1>Marketing & Promotions</h1>
-          <p>Manage campaigns, discount codes, and track return on ad spend (ROAS).</p>
+          <h1>Marketing Campaigns</h1>
+          <p>Create, manage, and track email and SMS marketing campaigns.</p>
         </div>
-        <button style={{
-          backgroundColor: '#4f46e5',
-          color: '#fff',
-          padding: '10px 20px',
-          border: 'none',
-          borderRadius: '8px',
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}>
-          + New Campaign
+        <button style={{ backgroundColor: '#B91C1C', color: '#fff', padding: '10px 20px', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Plus size={18} /> New Campaign
         </button>
       </div>
 
-      <div className="dashboard-grid">
-        <div className="card">
-          <div className="card-title">Active Campaigns</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Campaign Name</th>
-                <th>Status</th>
-                <th>Spend</th>
-                <th>Revenue</th>
-                <th>ROAS</th>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '32px' }}>
+        <div className="card" style={{ marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ background: '#EFF6FF', padding: '12px', borderRadius: '12px', color: '#1E40AF' }}><Mail size={24} /></div>
+            <div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1A1A2E' }}>24.5k</div>
+              <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>Email Subscribers</div>
+            </div>
+          </div>
+        </div>
+        <div className="card" style={{ marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ background: '#F0FDF4', padding: '12px', borderRadius: '12px', color: '#16A34A' }}><MessageSquare size={24} /></div>
+            <div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1A1A2E' }}>12.1k</div>
+              <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>SMS Subscribers</div>
+            </div>
+          </div>
+        </div>
+        <div className="card" style={{ marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ background: '#FEF2F2', padding: '12px', borderRadius: '12px', color: '#B91C1C' }}><Megaphone size={24} /></div>
+            <div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1A1A2E' }}>14.2%</div>
+              <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>Avg. Conversion Rate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title">
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Megaphone size={20} /> Recent Campaigns</span>
+        </div>
+        
+        <table style={{ marginTop: '16px', width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead>
+            <tr>
+              <th style={{ paddingBottom: '12px', borderBottom: '1px solid #E2E8F0', fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B' }}>Campaign Name</th>
+              <th style={{ paddingBottom: '12px', borderBottom: '1px solid #E2E8F0', fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B' }}>Status</th>
+              <th style={{ paddingBottom: '12px', borderBottom: '1px solid #E2E8F0', fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B' }}>Reach</th>
+              <th style={{ paddingBottom: '12px', borderBottom: '1px solid #E2E8F0', fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B' }}>Open Rate</th>
+              <th style={{ paddingBottom: '12px', borderBottom: '1px solid #E2E8F0', fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B' }}>Date</th>
+              <th style={{ paddingBottom: '12px', borderBottom: '1px solid #E2E8F0', fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B', textAlign: 'right' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {campaigns.map(camp => (
+              <tr key={camp.id}>
+                <td style={{ padding: '16px 0', borderBottom: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ color: '#64748B', background: '#F1F5F9', padding: '8px', borderRadius: '8px' }}>{camp.type}</div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1A1A2E' }}>{camp.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{camp.channel} Campaign</div>
+                    </div>
+                  </div>
+                </td>
+                <td style={{ padding: '16px 0', borderBottom: '1px solid #E2E8F0' }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                    padding: '4px 10px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600,
+                    background: camp.status === 'Active' || camp.status === 'Sent' ? '#DCFCE7' : camp.status === 'Scheduled' ? '#DBEAFE' : '#F1F5F9',
+                    color: camp.status === 'Active' || camp.status === 'Sent' ? '#166534' : camp.status === 'Scheduled' ? '#1E40AF' : '#64748B'
+                  }}>
+                    {camp.status === 'Sent' ? <Send size={12} /> : camp.status === 'Scheduled' ? <Clock size={12} /> : null}
+                    {camp.status}
+                  </span>
+                </td>
+                <td style={{ padding: '16px 0', borderBottom: '1px solid #E2E8F0', fontWeight: 600, color: '#1E293B' }}>{camp.reach}</td>
+                <td style={{ padding: '16px 0', borderBottom: '1px solid #E2E8F0', fontWeight: 600, color: '#1E293B' }}>{camp.openRate}</td>
+                <td style={{ padding: '16px 0', borderBottom: '1px solid #E2E8F0', fontSize: '0.85rem', color: '#64748B' }}>{camp.date}</td>
+                <td style={{ padding: '16px 0', borderBottom: '1px solid #E2E8F0', textAlign: 'right' }}>
+                  <button style={{ background: '#F1F5F9', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', color: '#1E293B', fontWeight: 600, fontSize: '0.75rem' }}>View Report</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {campaigns.map(c => (
-                <tr key={c.id}>
-                  <td style={{ fontWeight: 600 }}>{c.name}</td>
-                  <td>
-                    <span style={{
-                      backgroundColor: c.status === 'Active' ? '#dcfce7' : '#f3f4f6',
-                      color: c.status === 'Active' ? '#166534' : '#4b5563',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '0.75rem',
-                      fontWeight: 600
-                    }}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td>₹{c.spend.toLocaleString('en-IN')}</td>
-                  <td style={{ fontWeight: 600 }}>₹{c.revenue.toLocaleString('en-IN')}</td>
-                  <td style={{ color: '#16a34a', fontWeight: 600 }}>{c.roas}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="dark-card">
-          <div className="dark-card-title">Quick Discount Codes</div>
-          <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginBottom: '24px' }}>Active promo codes across the store.</p>
-          
-          <div style={{ background: '#1f2937', padding: '16px', borderRadius: '8px', marginBottom: '12px', border: '1px dashed #4b5563', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '0.1em' }}>FESTIVE20</div>
-              <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px' }}>20% off all orders over ₹5,000</div>
-            </div>
-            <div style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: 600 }}>142 Uses</div>
-          </div>
-
-          <div style={{ background: '#1f2937', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px dashed #4b5563', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '0.1em' }}>FREESHIP</div>
-              <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px' }}>Free shipping globally</div>
-            </div>
-            <div style={{ color: '#10b981', fontSize: '0.875rem', fontWeight: 600 }}>89 Uses</div>
-          </div>
-          
-          <button style={{ width: '100%', padding: '12px', background: '#374151', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }}>Create Discount Code</button>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </>
   );

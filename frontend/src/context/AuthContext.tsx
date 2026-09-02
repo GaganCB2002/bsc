@@ -19,8 +19,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string; isLocked?: boolean; lockedUntil?: string }>;
-  register: (data: { name: string; email: string; password: string; confirmPassword: string; phone?: string; age?: number; gender?: string; location?: string }) => Promise<{ success: boolean; message: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string; role?: string; isLocked?: boolean; lockedUntil?: string }>;
+  register: (data: { name: string; email: string; password: string; confirmPassword: string; phone?: string; age?: number; gender?: string; location?: string }) => Promise<{ success: boolean; message: string; role?: string }>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(data.token);
         const merged = mergeProfile(data.user);
         setUser(merged);
-        return { success: true, message: data.message };
+        return { success: true, message: data.message, role: data.user.role };
       }
       return { success: false, message: data.message || 'Login failed' };
     } catch (err: unknown) {
@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         merged.gender = formData.gender;
         merged.location = formData.location;
         setUser(merged);
-        return { success: true, message: data.message };
+        return { success: true, message: data.message, role: data.user.role };
       }
       return { success: false, message: data.message || 'Registration failed' };
     } catch (err: unknown) {
