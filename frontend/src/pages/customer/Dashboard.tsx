@@ -1,8 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { Package, Heart, MapPin, Settings, ShoppingBag, ChevronRight, CreditCard, Truck, Clock } from 'lucide-react';
+import { Package, Heart, MapPin, Settings, ShoppingBag, ChevronRight, CreditCard, Truck, Clock, Camera, Upload, X } from 'lucide-react';
+
+interface UploadedImage {
+  id: string;
+  name: string;
+  url: string;
+  date: string;
+  caption: string;
+}
 
 interface Order {
   id: string;
@@ -16,6 +24,17 @@ interface Order {
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const { totalItems } = useCart();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>(() => {
+    try {
+      const saved = localStorage.getItem('customerGallery');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadCaption, setUploadCaption] = useState('');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [orders] = useState<Order[]>([
     { id: 'BSC-M1K8X2-A7B3C', date: 'Sep 1, 2026', status: 'Delivered', amount: '₹4,599', items: 'Kanchipuram Silk Saree', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100&h=100&fit=crop' },
     { id: 'BSC-L2J9Y3-D4E5F', date: 'Aug 28, 2026', status: 'Shipped', amount: '₹2,899', items: 'Banarasi Silk Dupatta', image: 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=100&h=100&fit=crop' },
@@ -23,6 +42,44 @@ export default function CustomerDashboard() {
   ]);
 
   useEffect(() => { document.title = 'My Account - BSC Exclusive'; }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('File size must be under 5MB'); return; }
+    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => { setUploadPreview(ev.target?.result as string); setShowUploadModal(true); };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleUpload = () => {
+    if (!uploadPreview) return;
+    setUploading(true);
+    setTimeout(() => {
+      const newImage: UploadedImage = {
+        id: `img-${Date.now()}`,
+        name: `Photo ${uploadedImages.length + 1}`,
+        url: uploadPreview,
+        date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+        caption: uploadCaption || 'My purchase'
+      };
+      const updated = [newImage, ...uploadedImages];
+      setUploadedImages(updated);
+      localStorage.setItem('customerGallery', JSON.stringify(updated));
+      setUploadPreview(null);
+      setUploadCaption('');
+      setShowUploadModal(false);
+      setUploading(false);
+    }, 1000);
+  };
+
+  const handleDeleteImage = (id: string) => {
+    const updated = uploadedImages.filter(img => img.id !== id);
+    setUploadedImages(updated);
+    localStorage.setItem('customerGallery', JSON.stringify(updated));
+  };
 
   const firstName = (user?.name || 'Customer').split(' ')[0];
 
@@ -116,6 +173,125 @@ export default function CustomerDashboard() {
           })}
         </div>
       </div>
+
+      {/* My Gallery - Image Upload */}
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1A1A2E' }}>My Gallery</h2>
+            <p style={{ fontSize: '0.75rem', color: '#6B6B6B' }}>Upload and share your purchase photos</p>
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
+              background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '8px',
+              fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit'
+            }}
+          >
+            <Upload size={14} /> Upload Photo
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: 'none' }} />
+        </div>
+
+        {uploadedImages.length === 0 ? (
+          <div style={{ background: '#fff', border: '2px dashed #E2E8F0', borderRadius: '12px', padding: '40px', textAlign: 'center' }}>
+            <Camera size={40} color="#CBD5E1" style={{ marginBottom: '12px' }} />
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#64748B', marginBottom: '4px' }}>No photos yet</h3>
+            <p style={{ fontSize: '0.8rem', color: '#94A3B8', marginBottom: '16px' }}>Upload photos of your purchases to share your style</p>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                padding: '10px 20px', background: '#B91C1C', color: '#fff', border: 'none',
+                borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit'
+              }}
+            >
+              <Camera size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> Upload Your First Photo
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
+            {uploadedImages.map((img) => (
+              <div key={img.id} style={{ background: '#fff', border: '1px solid #F0EBE5', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ position: 'relative' }}>
+                  <img src={img.url} alt={img.caption} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+                  <button
+                    onClick={() => handleDeleteImage(img.id)}
+                    style={{
+                      position: 'absolute', top: '6px', right: '6px', width: '24px', height: '24px',
+                      borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                      fontSize: '0.7rem'
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+                <div style={{ padding: '10px' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1E293B' }}>{img.caption}</div>
+                  <div style={{ fontSize: '0.65rem', color: '#94A3B8', marginTop: '2px' }}>{img.date}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div style={{ background: '#fff', borderRadius: '16px', maxWidth: '480px', width: '100%', overflow: 'hidden' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #F0EBE5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1E293B' }}>Upload Photo</h3>
+              <button onClick={() => { setShowUploadModal(false); setUploadPreview(null); setUploadCaption(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              {uploadPreview && (
+                <div style={{ marginBottom: '16px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #F0EBE5' }}>
+                  <img src={uploadPreview} alt="Preview" style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', background: '#F8FAFC' }} />
+                </div>
+              )}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#1E293B', marginBottom: '6px' }}>Caption (optional)</label>
+                <input
+                  type="text"
+                  value={uploadCaption}
+                  onChange={(e) => setUploadCaption(e.target.value)}
+                  placeholder="Describe your photo..."
+                  style={{
+                    width: '100%', padding: '10px 14px', border: '1px solid #E2E8F0', borderRadius: '8px',
+                    fontSize: '0.85rem', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => { setShowUploadModal(false); setUploadPreview(null); setUploadCaption(''); }}
+                  style={{ flex: 1, padding: '12px', background: '#F1F5F9', color: '#64748B', border: 'none', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  style={{
+                    flex: 1, padding: '12px', background: '#B91C1C', color: '#fff', border: 'none',
+                    borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: uploading ? 'wait' : 'pointer',
+                    fontFamily: 'inherit', opacity: uploading ? 0.7 : 1
+                  }}
+                >
+                  {uploading ? 'Uploading...' : 'Upload Photo'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Shop Banner */}
       <div style={{ background: 'linear-gradient(135deg, #B91C1C, #991B1B)', borderRadius: '14px', padding: '28px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -33,6 +33,36 @@ const modules = import.meta.glob('../assets/*.{png,jpg,jpeg,webp,avif}', { eager
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const heroImages = Object.values(modules).map((mod: any) => mod.default);
 
+function FAQItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: '1px solid #E2E8F0' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%', padding: '20px 0', background: 'none', border: 'none',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          cursor: 'pointer', textAlign: 'left', gap: '16px'
+        }}
+      >
+        <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1E293B' }}>{question}</span>
+        <span style={{
+          width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
+          background: open ? '#B91C1C' : '#F1F5F9', color: open ? '#fff' : '#64748B',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '1.2rem', transition: 'all 0.3s', transform: open ? 'rotate(45deg)' : 'rotate(0deg)'
+        }}>+</span>
+      </button>
+      <div style={{
+        maxHeight: open ? '300px' : '0', overflow: 'hidden',
+        transition: 'max-height 0.3s ease', paddingBottom: open ? '20px' : '0'
+      }}>
+        <p style={{ fontSize: '0.88rem', color: '#64748B', lineHeight: 1.7, margin: 0 }}>{answer}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -708,6 +738,33 @@ export default function LandingPage() {
                 Book Appointment
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ SECTION */}
+      <section style={{ padding: '80px 0', background: '#F8FAFC' }}>
+        <div className="container">
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span className="lp-section-tag">FAQ</span>
+            <h2>Frequently Asked <span className="lp-text-accent">Questions</span></h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
+              Everything you need to know about our products, shipping, and policies.
+            </p>
+          </div>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            {[
+              { q: 'Are your silk sarees authentic?', a: 'Yes, every saree we sell is 100% authentic handloom silk. We source directly from certified weavers in Kanchipuram, Banaras, and Dharmavaram. Each product comes with a GI (Geographical Indication) tag guaranteeing authenticity.' },
+              { q: 'How long does shipping take?', a: 'Standard shipping takes 5-7 business days across India. Express shipping (2-3 days) is available for ₹250. Same-day delivery is available in select cities for ₹500. Orders above ₹5,000 qualify for free standard shipping.' },
+              { q: 'What is your return policy?', a: 'We offer a 7-day return policy for unused items with original tags intact. If you receive a damaged or incorrect product, we provide a full refund including shipping charges. Contact our support team to initiate a return.' },
+              { q: 'How do I know my size?', a: 'Each product page includes a Size Guide link. For sarees, the standard length is 6.3 meters. For kurtas and sherwanis, we recommend measuring your chest and referring to our size chart. Our customer support can also help with sizing queries.' },
+              { q: 'Are the colors accurate in the photos?', a: 'We photograph all products under natural lighting to ensure color accuracy. However, slight variations may occur due to screen settings and the handcrafted nature of our products. Each piece is unique.' },
+              { q: 'Do you offer bridal consultation?', a: 'Yes! We offer personalized bridal consultation services. Our expert consultants will help you choose the perfect silk saree or lehenga for your special day. Call us at +91 8192 272180 or visit any of our stores to book an appointment.' },
+              { q: 'What payment methods do you accept?', a: 'We accept UPI (Google Pay, PhonePe, Paytm), Razorpay (all cards, net banking), and Cash on Delivery (COD). All online payments are secured with industry-standard encryption.' },
+              { q: 'Can I visit your physical stores?', a: 'Yes, we have three showrooms in Karnataka — Davangere (Medical College Road), Belgaum (Tilakwadi), and Shivamogga (B.H. Road). Visit us to experience our collections in person. Our staff will be happy to assist you.' },
+            ].map((faq, i) => (
+              <FAQItem key={i} question={faq.q} answer={faq.a} />
+            ))}
           </div>
         </div>
       </section>
