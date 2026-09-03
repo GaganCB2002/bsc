@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { isAxiosError } from 'axios';
 import { authService } from '../services/authService';
+import { setUnauthorizedHandler } from '../services/api';
+import { normalizeError } from '../services/api';
 import { showToast } from '../components/Toast';
 
 interface User {
@@ -20,7 +23,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string; role?: string; isLocked?: boolean; lockedUntil?: string }>;
-  register: (data: { name: string; email: string; password: string; confirmPassword: string; phone?: string; age?: number; gender?: string; location?: string }) => Promise<{ success: boolean; message: string; role?: string }>;
+  register: (data: { name: string; email: string; password: string; confirmPassword: string; phone?: string; age?: number; gender?: string; location?: string }) => Promise<{ success: boolean; message: string; role?: string; fieldErrors?: Array<{ field: string; message: string }> }>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -40,39 +43,64 @@ function getLocalProfile(): Partial<User> {
 }
 
 function saveLocalProfile(profile: Partial<User>) {
-  localStorage.setItem('userProfile', JSON.stringify(profile));
+  try {
+    localStorage.setItem('userProfile', JSON.stringify(profile));
+  } catch {
+    /* quota / private mode — silently ignore */
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  // Lazy initializer + null check for missing keys.
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('token');
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
-  const hasFetched = useRef(false);
+  const lastFetchedToken = useRef<string | null>(null);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('loginTimestamp');
-    localStorage.removeItem('role');
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('loginTimestamp');
+      localStorage.removeItem('role');
+    } catch {
+      /* ignore */
+    }
     setToken(null);
     setUser(null);
   }, []);
 
   const check24HourExpiry = useCallback(() => {
-    const loginTime = localStorage.getItem('loginTimestamp');
-    if (loginTime) {
-      const elapsed = Date.now() - parseInt(loginTime, 10);
-      if (elapsed >= TWENTY_FOUR_HOURS_MS) {
-        logout();
-        showToast('warning', 'Session expired (24h limit). Please sign in again.');
-        return true;
+    try {
+      const loginTime = localStorage.getItem('loginTimestamp');
+      if (loginTime) {
+        const elapsed = Date.now() - parseInt(loginTime, 10);
+        if (Number.isFinite(elapsed) && elapsed >= TWENTY_FOUR_HOURS_MS) {
+          logout();
+          showToast('warning', 'Session expired (24h limit). Please sign in again.');
+          return true;
+        }
       }
+    } catch {
+      /* ignore */
     }
     return false;
   }, [logout]);
 
+  // Server is the source of truth. Local profile is a write-through cache of
+  // fields the server doesn't know about (age/gender/location), but never
+  // overrides fields the server already provided.
   const mergeProfile = useCallback((apiUser: User): User => {
     const local = getLocalProfile();
-    return { ...apiUser, ...local };
+    return {
+      ...local,
+      ...apiUser,
+    };
   }, []);
 
   const fetchUser = useCallback(async () => {
@@ -80,32 +108,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-
     if (check24HourExpiry()) {
       setLoading(false);
       return;
     }
-
     try {
       const data = await authService.getMe();
       if (data.success) {
-        const merged = mergeProfile(data.user);
-        setUser(merged);
+        setUser(mergeProfile(data.user));
       } else {
         logout();
       }
     } catch {
-      logout();
+      // 401 is already handled by the api.ts interceptor. Any other error here
+      // is transient — keep the cached user so the app still works.
     } finally {
       setLoading(false);
     }
   }, [token, check24HourExpiry, logout, mergeProfile]);
 
+  // React to token changes (login, logout, user-switch) instead of a one-shot ref guard.
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
+    if (lastFetchedToken.current === token) return;
+    lastFetchedToken.current = token;
+    setLoading(true);
     fetchUser();
-  }, [fetchUser]);
+  }, [token, fetchUser]);
 
   useEffect(() => {
     if (!token) return;
@@ -115,34 +143,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, [token, check24HourExpiry]);
 
+  // Register the unauthorized handler so the 401 path also clears React state.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      logout();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
+
   const login = async (email: string, password: string) => {
     try {
       const data = await authService.login({ email, password });
       if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('loginTimestamp', Date.now().toString());
+        try {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('loginTimestamp', Date.now().toString());
+        } catch {
+          /* ignore */
+        }
         setToken(data.token);
-        const merged = mergeProfile(data.user);
-        setUser(merged);
+        setUser(mergeProfile(data.user));
         return { success: true, message: data.message, role: data.user.role };
       }
       return { success: false, message: data.message || 'Login failed' };
-    } catch (err: unknown) {
-      const error = err as { response?: { status?: number, data?: { message?: string; lockedUntil?: string } } };
-      
-      if (error.response?.status === 429) {
+    } catch (err) {
+      if (isAxiosError(err) && err.response?.status === 429) {
+        const body = (err.response.data ?? {}) as { message?: string; lockedUntil?: string };
         return {
           success: false,
-          message: error.response.data?.message || 'Too many login attempts.',
+          message: body.message || 'Too many login attempts.',
           isLocked: true,
-          lockedUntil: error.response.data?.lockedUntil || new Date(Date.now() + 15 * 60 * 1000).toISOString()
+          lockedUntil: body.lockedUntil || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         };
       }
-
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Unable to connect to server',
-      };
+      const { message } = normalizeError(err);
+      return { success: false, message: message || 'Unable to connect to server' };
     }
   };
 
@@ -157,21 +192,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const data = await authService.register(formData);
       if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('loginTimestamp', Date.now().toString());
+        try {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('loginTimestamp', Date.now().toString());
+        } catch {
+          /* ignore */
+        }
         setToken(data.token);
-        const merged = mergeProfile(data.user);
-        merged.age = formData.age;
-        merged.gender = formData.gender;
-        merged.location = formData.location;
-        setUser(merged);
+        setUser(mergeProfile(data.user));
         return { success: true, message: data.message, role: data.user.role };
       }
       return { success: false, message: data.message || 'Registration failed' };
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string; errors?: Array<{ message: string }> } } };
-      const msg = error.response?.data?.errors?.[0]?.message || error.response?.data?.message || 'Unable to connect to server';
-      return { success: false, message: msg };
+    } catch (err) {
+      const { message, fieldErrors } = normalizeError(err);
+      return {
+        success: false,
+        message: message || 'Unable to connect to server',
+        fieldErrors,
+      };
     }
   };
 

@@ -51,7 +51,7 @@ export const getUserAnalytics = async (req, res, next) => {
         quizzesPassed,
         averageQuizScore: avgQuizScore,
         recentActivity,
-        progressByCoure: progressList.map((p) => ({
+        progressByCourse: progressList.map((p) => ({
           course: p.courseId,
           percentage: p.percentage,
           completedSections: p.completedSections.length,

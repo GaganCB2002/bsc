@@ -1,21 +1,23 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShoppingBag, Menu, X, ChevronRight, Star, MapPin, Phone, Mail, Award, Shield, Truck, Leaf, Navigation, User, LogOut } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X, ChevronRight, Star, MapPin, Phone, Mail, Award, Shield, Truck, Leaf, Navigation, User, LogOut, Sparkles, Users, Lock, RefreshCcw, BadgeCheck, Heart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useTryOn } from '../context/TryOnContext';
 import { getProductsByCategory, getProductsByTag, type Product } from '../data/mockProducts';
 import StoreLocator from '../components/StoreLocator';
 import Chatbot from '../components/Chatbot';
 import CookieConsent from '../components/CookieConsent';
 import { showToast } from '../components/Toast';
+import { useCurrency } from '../context/CurrencyContext';
 import './LandingPage.css';
 
 const featuredProducts = [
-  { id: 'w-1', title: 'Royal Crimson Kanchipuram Silk Saree', category: 'Handloom Silk', price: '₹45,000', rating: 4.9, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=600', badge: 'New Arrival' },
-  { id: 'w-2', title: 'Golden Zari Banarasi Brocade Saree', category: 'Banarasi Heritage', price: '₹38,500', rating: 4.8, image: 'https://images.unsplash.com/photo-1771654099745-73a4a4d09bcd?auto=format&fit=crop&q=80&w=600', badge: 'Best Seller' },
-  { id: 'w-3', title: 'Pure Mulberry Tissue Silk Saree', category: 'Mulberry Special', price: '₹28,900', rating: 4.9, image: 'https://images.unsplash.com/photo-1771654805161-442c6aab7b55?auto=format&fit=crop&q=80&w=600', badge: 'Exclusive' },
-  { id: 'w-4', title: 'Emerald Green Temple Border Silk', category: 'Kanchipuram Classic', price: '₹52,000', rating: 5.0, image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=600', badge: 'Heritage' },
+  { id: 'w-1', title: 'Royal Crimson Kanchipuram Silk Saree', category: 'Handloom Silk', price: 45000, rating: 4.9, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=600', badge: 'New Arrival' },
+  { id: 'w-2', title: 'Golden Zari Banarasi Brocade Saree', category: 'Banarasi Heritage', price: 38500, rating: 4.8, image: 'https://images.unsplash.com/photo-1771654099745-73a4a4d09bcd?auto=format&fit=crop&q=80&w=600', badge: 'Best Seller' },
+  { id: 'w-3', title: 'Pure Mulberry Tissue Silk Saree', category: 'Mulberry Special', price: 28900, rating: 4.9, image: 'https://images.unsplash.com/photo-1771654805161-442c6aab7b55?auto=format&fit=crop&q=80&w=600', badge: 'Exclusive' },
+  { id: 'w-4', title: 'Emerald Green Temple Border Silk', category: 'Kanchipuram Classic', price: 52000, rating: 5.0, image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=600', badge: 'Heritage' },
 ];
 
 const collections = [
@@ -71,13 +73,14 @@ export default function LandingPage() {
   const bestsellers = useMemo(() => getProductsByCategory('bestsellers').slice(0, 4), []);
   const menCollection = useMemo(() => getProductsByCategory('men').slice(0, 4), []);
   const kidsCollection = useMemo(() => getProductsByCategory('kids').slice(0, 4), []);
-  const weddingProducts = useMemo(() => getProductsByTag('wedding').slice(0, 4), []);
-  const festiveProducts = useMemo(() => getProductsByTag('festive').slice(0, 4), []);
   const [slideIndex, setSlideIndex] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [activeOccasion, setActiveOccasion] = useState('wedding');
   const { totalItems } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
+  const { formatPrice } = useCurrency();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { openFittingRoom } = useTryOn();
   const [showStores, setShowStores] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
@@ -149,9 +152,9 @@ export default function LandingPage() {
               <span style={{ fontSize: '0.7rem', color: '#94A3B8', marginLeft: '4px' }}>({product.reviews})</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px' }}>
-              <span style={{ fontWeight: 700, fontSize: '1rem', color: '#B91C1C' }}>₹{product.price.toLocaleString('en-IN')}</span>
+              <span style={{ fontWeight: 700, fontSize: '1.1rem', color: '#B91C1C' }}>{formatPrice(product.price)}</span>
               {product.comparePrice && (
-                <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through' }}>₹{product.comparePrice.toLocaleString('en-IN')}</span>
+                <span style={{ fontSize: '0.8rem', color: '#94A3B8', textDecoration: 'line-through' }}>{formatPrice(product.comparePrice)}</span>
               )}
               {product.comparePrice && product.comparePrice > product.price && (
                 <span style={{ fontSize: '0.65rem', color: '#16a34a', fontWeight: 600 }}>{Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}% OFF</span>
@@ -161,6 +164,15 @@ export default function LandingPage() {
               <Link to={`/product/${product.id}`} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '8px', background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>
                 <ShoppingBag size={13} /> View Details
               </Link>
+              {product.virtualTryOn && (
+                <button onClick={(e) => { e.preventDefault(); openFittingRoom(product.id, product.name, product.image, product.price); }} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '8px 10px',
+                  background: '#fff', color: '#B91C1C', border: '1px solid #B91C1C', borderRadius: '6px',
+                  fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer',
+                }}>
+                  <Sparkles size={12} /> Try On
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -516,90 +528,124 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SHOP BY OCCASION */}
-      <section style={{ padding: '80px 0', background: '#fff' }}>
+      {/* SHOP BY OCCASION (Interactive) */}
+      <section style={{ padding: '80px 0', background: '#FAFAF9' }}>
         <div className="container">
           <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <span className="lp-section-tag">Shop by Occasion</span>
-            <h2>Find the Perfect <span className="lp-text-accent">Look</span></h2>
+            <span className="lp-section-tag" style={{ color: '#B91C1C', background: 'rgba(185, 28, 28, 0.05)', border: '1px solid rgba(185, 28, 28, 0.1)' }}>Curated Collections</span>
+            <h2 style={{ color: '#1C1917', fontFamily: 'serif', fontWeight: 400 }}>Shop by <span style={{ color: '#B91C1C' }}>Occasion</span></h2>
+            <p style={{ maxWidth: '600px', margin: '16px auto 0', color: '#57534E', fontSize: '1rem' }}>
+              Explore our expertly curated collections tailored for every milestone and celebration in your life.
+            </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+          
+          <div className="reveal" style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '40px' }}>
             {[
-              { tag: 'wedding', label: 'Wedding', icon: '💍', desc: 'Bridal & trousseau', color: '#B91C1C' },
-              { tag: 'festive', label: 'Festive', icon: '🪔', desc: 'Puja & celebrations', color: '#D97706' },
-              { tag: 'party', label: 'Party', icon: '✨', desc: 'Cocktail & evening', color: '#7C3AED' },
-              { tag: 'casual', label: 'Casual', icon: '🌿', desc: 'Everyday elegance', color: '#059669' },
-              { tag: 'office', label: 'Office', icon: '💼', desc: 'Professional wear', color: '#1E3A8A' },
-              { tag: 'traditional', label: 'Traditional', icon: '🙏', desc: 'Heritage classics', color: '#9333EA' },
-            ].map((occ, i) => (
-              <Link key={i} to={`/category/new-arrivals?search=${occ.tag}`} className="reveal" style={{ textDecoration: 'none' }}>
-                <div style={{ padding: '28px 20px', background: '#fff', borderRadius: '12px', textAlign: 'center', border: '1px solid #F0EBE5', cursor: 'pointer', transition: 'all 0.3s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = occ.color; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = '#F0EBE5'; }}>
-                  <div style={{ fontSize: '2.2rem', marginBottom: '10px' }}>{occ.icon}</div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B', marginBottom: '4px' }}>{occ.label}</h3>
-                  <p style={{ fontSize: '0.78rem', color: '#64748B' }}>{occ.desc}</p>
-                </div>
-              </Link>
+              { id: 'wedding', label: 'Bridal & Trousseau' },
+              { id: 'festive', label: 'Festive & Puja' },
+              { id: 'party', label: 'Cocktail & Evening' },
+              { id: 'casual', label: 'Everyday Elegance' },
+              { id: 'office', label: 'Professional Wear' },
+              { id: 'traditional', label: 'Heritage Classics' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveOccasion(tab.id)}
+                style={{
+                  padding: '10px 24px',
+                  background: activeOccasion === tab.id ? '#1C1917' : 'transparent',
+                  color: activeOccasion === tab.id ? '#FFFFFF' : '#57534E',
+                  border: `1px solid ${activeOccasion === tab.id ? '#1C1917' : '#D6D3D1'}`,
+                  borderRadius: '30px',
+                  fontSize: '0.9rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontFamily: 'sans-serif',
+                  letterSpacing: '0.5px'
+                }}
+                onMouseEnter={(e) => {
+                  if (activeOccasion !== tab.id) {
+                    e.currentTarget.style.borderColor = '#A8A29E';
+                    e.currentTarget.style.color = '#1C1917';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeOccasion !== tab.id) {
+                    e.currentTarget.style.borderColor = '#D6D3D1';
+                    e.currentTarget.style.color = '#57534E';
+                  }
+                }}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* WEDDING & FESTIVE SHOWCASE */}
-      <section style={{ padding: '80px 0', background: 'linear-gradient(135deg, #FDF2F8 0%, #FFF7ED 100%)' }}>
-        <div className="container">
-          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <span className="lp-section-tag">Wedding Season</span>
-            <h2>Special <span className="lp-text-accent">Bridal Collection</span></h2>
-            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
-              Curated silk sarees and lehengas for the most special day of your life.
-            </p>
+          <div style={{ minHeight: '400px' }}>
+            {renderProductGrid(getProductsByTag(activeOccasion).slice(0, 4))}
           </div>
-          {renderProductGrid(weddingProducts)}
-          <div style={{ textAlign: 'center', marginTop: '32px' }}>
-            <Link to="/category/women" className="lp-btn-primary">Explore Bridal Collection</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* FESTIVE COLLECTION */}
-      <section style={{ padding: '80px 0', background: '#FAF7F2' }}>
-        <div className="container">
-          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <span className="lp-section-tag">Festive Special</span>
-            <h2>Celebrate in <span className="lp-text-accent">Style</span></h2>
-            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#64748B', fontSize: '0.9rem' }}>
-              Colorful, vibrant outfits perfect for pujas, Diwali, Eid, and every celebration.
-            </p>
-          </div>
-          {renderProductGrid(festiveProducts)}
-          <div style={{ textAlign: 'center', marginTop: '32px' }}>
-            <Link to="/category/new-arrivals?search=festive" className="lp-btn-primary">Shop Festive Collection</Link>
+          
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+            <Link to={`/category/new-arrivals?search=${activeOccasion}`} style={{
+              display: 'inline-block',
+              padding: '12px 32px',
+              border: '1px solid #1C1917',
+              color: '#1C1917',
+              textDecoration: 'none',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              letterSpacing: '1px',
+              textTransform: 'uppercase',
+              transition: 'background 0.3s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#F5F5F4'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              View All {activeOccasion}
+            </Link>
           </div>
         </div>
       </section>
 
       {/* WHY CHOOSE US SECTION */}
-      <section style={{ padding: '80px 0', background: '#F8FAFC' }}>
+      <section style={{ padding: '80px 0', background: '#FAFAF9' }}>
         <div className="container">
-          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <span className="lp-section-tag">Why Choose Us</span>
-            <h2>The <span className="lp-text-accent">BSC Exclusive</span> Promise</h2>
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <span className="lp-section-tag" style={{ color: '#B91C1C', background: 'rgba(185, 28, 28, 0.05)', border: '1px solid rgba(185, 28, 28, 0.1)' }}>Why Choose Us</span>
+            <h2 style={{ color: '#1C1917', fontFamily: 'serif', fontWeight: 400 }}>The <span style={{ color: '#B91C1C' }}>BSC Exclusive</span> Promise</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px' }}>
             {[
-              { icon: '🏆', title: '100% Authentic Silk', desc: 'GI-tagged genuine silk sourced directly from certified sericulture farms in Karnataka.' },
-              { icon: '🤝', title: 'Direct from Weavers', desc: 'No middlemen. We partner with 200+ master weavers across South India.' },
-              { icon: '🔒', title: 'Secure Payments', desc: 'UPI, Razorpay, and Cash on Delivery — your money is always safe.' },
-              { icon: '🚚', title: 'Pan-India Delivery', desc: 'Free shipping on orders above ₹5,000. Delivered to your doorstep.' },
-              { icon: '💎', title: 'Quality Guaranteed', desc: 'Every saree undergoes 6-point quality check before dispatch.' },
-              { icon: '↩️', title: 'Easy Returns', desc: '7-day return policy for unused items with original tags.' },
+              { icon: <Award size={28} color="#B91C1C" strokeWidth={1.5} />, title: '100% Authentic Silk', desc: 'GI-tagged genuine silk sourced directly from certified sericulture farms in Karnataka.' },
+              { icon: <Users size={28} color="#B91C1C" strokeWidth={1.5} />, title: 'Direct from Weavers', desc: 'No middlemen. We partner with 200+ master weavers across South India.' },
+              { icon: <Lock size={28} color="#B91C1C" strokeWidth={1.5} />, title: 'Secure Payments', desc: 'UPI, Razorpay, and Cash on Delivery — your money is always safe.' },
+              { icon: <Truck size={28} color="#B91C1C" strokeWidth={1.5} />, title: 'Pan-India Delivery', desc: `Free shipping on orders above ${formatPrice(5000)}. Delivered to your doorstep.` },
+              { icon: <BadgeCheck size={28} color="#B91C1C" strokeWidth={1.5} />, title: 'Quality Guaranteed', desc: 'Every saree undergoes a rigorous 6-point quality check before dispatch.' },
+              { icon: <RefreshCcw size={28} color="#B91C1C" strokeWidth={1.5} />, title: 'Easy Returns', desc: '7-day return policy for unused items with original tags intact.' },
             ].map((item, i) => (
-              <div key={i} className="reveal" style={{ padding: '28px 20px', background: '#fff', borderRadius: '12px', textAlign: 'center', border: '1px solid #F0EBE5' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '12px' }}>{item.icon}</div>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', marginBottom: '8px' }}>{item.title}</h3>
-                <p style={{ fontSize: '0.82rem', color: '#64748B', lineHeight: 1.6 }}>{item.desc}</p>
+              <div key={i} className="reveal" style={{ 
+                padding: '32px 24px', 
+                background: '#FFFFFF', 
+                borderRadius: '8px', 
+                textAlign: 'left', 
+                border: '1px solid #E7E5E4',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                transition: 'transform 0.3s ease'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.02)'; }}
+              >
+                <div style={{ background: '#FEF2F2', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {item.icon}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1C1917', marginBottom: '8px', letterSpacing: '-0.3px' }}>{item.title}</h3>
+                  <p style={{ fontSize: '0.9rem', color: '#57534E', lineHeight: 1.6 }}>{item.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -771,49 +817,93 @@ export default function LandingPage() {
       </section>
 
       {/* OFFERS & DEALS SECTION */}
-      <section style={{ padding: '80px 0', background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #FCD34D 100%)' }}>
+      <section style={{ padding: '80px 0', background: '#FAFAF9', borderTop: '1px solid #E5E5E5' }}>
         <div className="container">
-          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <span className="lp-section-tag" style={{ background: '#92400E', color: '#fff', border: 'none' }}>Limited Time</span>
-            <h2 style={{ color: '#92400E' }}>Today's <span style={{ color: '#B91C1C' }}>Best Deals</span></h2>
-            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#78350F', fontSize: '0.9rem' }}>
-              Grab these exclusive offers before they expire. Use the coupon codes at checkout!
+          <div className="lp-section-header reveal" style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h2 style={{ color: '#1C1917', fontSize: '2rem', fontFamily: 'serif', fontWeight: 400 }}>Exclusive Offers</h2>
+            <p style={{ maxWidth: '600px', margin: '12px auto 0', color: '#57534E', fontSize: '1rem' }}>
+              Apply these coupon codes at checkout to avail special discounts on your purchase.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
             {[
-              { code: 'WELCOME20', discount: '20% OFF', desc: 'First order discount for new customers', min: 'Min order ₹1,999', expiry: 'Expires Sep 30, 2026', color: '#B91C1C', bg: '#FEE2E2' },
-              { code: 'BSC500', discount: '₹500 OFF', desc: 'Flat ₹500 off on orders above ₹5,000', min: 'Min order ₹5,000', expiry: 'Expires Oct 15, 2026', color: '#1E3A8A', bg: '#DBEAFE' },
-              { code: 'FESTIVE30', discount: '30% OFF', desc: 'Festive season special on silk sarees', min: 'Min order ₹3,000', expiry: 'Expires Nov 30, 2026', color: '#16A34A', bg: '#DCFCE7' },
-              { code: 'FREEDEL', discount: 'FREE DELIVERY', desc: 'Free shipping on all orders — no minimum', min: 'No minimum order', expiry: 'Expires Sep 15, 2026', color: '#7C3AED', bg: '#EDE9FE' },
-              { code: 'BRIDE10', discount: '10% OFF', desc: 'Special discount on bridal collection', min: 'Min order ₹10,000', expiry: 'Expires Dec 31, 2026', color: '#DB2777', bg: '#FCE7F3' },
-              { code: 'BSC2026', discount: '15% OFF', desc: 'Anniversary special — celebrate with us', min: 'Min order ₹2,500', expiry: 'Expires Oct 31, 2026', color: '#EA580C', bg: '#FFEDD5' },
+              { code: 'WELCOME20', discount: '20% OFF', desc: 'First order discount for new customers', min: 'Min order ₹1,999', expiry: 'Expires Sep 30, 2026', color: '#B91C1C' },
+              { code: 'BSC500', discount: '₹500 OFF', desc: 'Flat ₹500 off on orders above ₹5,000', min: 'Min order ₹5,000', expiry: 'Expires Oct 15, 2026', color: '#0F172A' },
+              { code: 'FESTIVE30', discount: '30% OFF', desc: 'Festive season special on silk sarees', min: 'Min order ₹3,000', expiry: 'Expires Nov 30, 2026', color: '#047857' },
+              { code: 'FREEDEL', discount: 'FREE DELIVERY', desc: 'Free shipping on all orders — no minimum', min: 'No minimum order', expiry: 'Expires Sep 15, 2026', color: '#4338CA' },
+              { code: 'BRIDE10', discount: '10% OFF', desc: 'Special discount on bridal collection', min: 'Min order ₹10,000', expiry: 'Expires Dec 31, 2026', color: '#BE123C' },
+              { code: 'BSC2026', discount: '15% OFF', desc: 'Anniversary special — celebrate with us', min: 'Min order ₹2,500', expiry: 'Expires Oct 31, 2026', color: '#C2410C' },
             ].map((offer, i) => (
-              <div key={i} className="reveal" style={{ background: '#fff', borderRadius: '14px', overflow: 'hidden', border: '1px solid #FDE68A', position: 'relative' }}>
-                <div style={{ background: offer.color, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff' }}>{offer.discount}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', marginTop: '2px' }}>{offer.desc}</div>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.65rem', color: '#fff', fontWeight: 600, textTransform: 'uppercase' }}>
-                    {offer.expiry.split('Expires ')[1]}
+              <div key={i} className="reveal" style={{ 
+                background: '#FFFFFF', 
+                border: '1px solid #E7E5E4', 
+                borderRadius: '8px', 
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                cursor: 'default'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)';
+              }}
+              >
+                <div style={{ padding: '24px', borderBottom: '1px dashed #D6D3D1', position: 'relative' }}>
+                  {/* Ticket notch effects */}
+                  <div style={{ position: 'absolute', bottom: '-8px', left: '-8px', width: '16px', height: '16px', borderRadius: '50%', background: '#FAFAF9', border: '1px solid #E7E5E4', borderLeft: 'none', borderTop: 'none', transform: 'rotate(45deg)' }} />
+                  <div style={{ position: 'absolute', bottom: '-8px', right: '-8px', width: '16px', height: '16px', borderRadius: '50%', background: '#FAFAF9', border: '1px solid #E7E5E4', borderRight: 'none', borderBottom: 'none', transform: 'rotate(45deg)' }} />
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: offer.color, margin: '0 0 8px 0' }}>{offer.discount}</h3>
+                      <p style={{ fontSize: '0.9rem', color: '#44403C', margin: 0, lineHeight: 1.4 }}>{offer.desc}</p>
+                    </div>
                   </div>
                 </div>
-                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '0.7rem', color: '#64748B' }}>Code:</span>
-                      <span style={{ padding: '3px 10px', background: offer.bg, color: offer.color, borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700, fontFamily: 'monospace', letterSpacing: '0.05em' }}>
-                        {offer.code}
-                      </span>
+                
+                <div style={{ padding: '20px 24px', background: '#FAFAF9', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#78716C', lineHeight: 1.5 }}>
+                      {offer.min}<br/>
+                      <span style={{ fontSize: '0.75rem', color: '#A8A29E' }}>{offer.expiry.replace('Expires ', '')}</span>
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>{offer.min}</div>
+                    <div style={{ background: '#F5F5F4', border: '1px solid #E7E5E4', padding: '6px 12px', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 600, color: '#1C1917', letterSpacing: '1px', fontFamily: 'monospace' }}>
+                      {offer.code}
+                    </div>
                   </div>
                   <button
-                    onClick={() => { navigator.clipboard.writeText(offer.code); showToast('success', `Coupon "${offer.code}" copied!`); }}
-                    style={{ padding: '8px 16px', background: offer.color, color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                    onClick={() => {
+                      if (!navigator.clipboard) {
+                        showToast('error', 'Clipboard not available in this browser');
+                        return;
+                      }
+                      navigator.clipboard.writeText(offer.code).then(
+                        () => showToast('success', `Coupon "${offer.code}" copied!`),
+                        () => showToast('error', 'Failed to copy coupon code'),
+                      );
+                    }}
+                    style={{ 
+                      width: '100%', 
+                      padding: '10px', 
+                      background: '#FFFFFF', 
+                      color: '#1C1917', 
+                      border: '1px solid #D6D3D1', 
+                      borderRadius: '4px', 
+                      fontSize: '0.85rem', 
+                      fontWeight: 600, 
+                      cursor: 'pointer',
+                      transition: 'background 0.2s',
+                      marginTop: 'auto'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F5F5F4'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
                   >
                     Copy Code
                   </button>
@@ -821,9 +911,10 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-          <div className="reveal" style={{ textAlign: 'center', marginTop: '32px', padding: '16px', background: 'rgba(255,255,255,0.7)', borderRadius: '10px' }}>
-            <p style={{ fontSize: '0.85rem', color: '#92400E', fontWeight: 500 }}>
-              💡 <strong>Auto-Apply:</strong> Eligible coupons are automatically applied at checkout for maximum savings!
+          
+          <div className="reveal" style={{ textAlign: 'center', marginTop: '40px', padding: '16px', borderTop: '1px solid #E5E5E5' }}>
+            <p style={{ fontSize: '0.9rem', color: '#57534E', margin: 0 }}>
+              Note: Eligible coupons are automatically applied at checkout for your convenience.
             </p>
           </div>
         </div>
@@ -838,18 +929,24 @@ export default function LandingPage() {
             {!newsletterSubmitted ? (
               <form className="lp-newsletter-form" onSubmit={(e) => {
                 e.preventDefault();
-                if (newsletterEmail && newsletterEmail.includes('@')) {
+                // Light client-side check: HTML `type="email"` already enforces
+                // a basic shape — this guards against whitespace-only and
+                // missing-TLD values that some browsers accept.
+                const email = newsletterEmail.trim();
+                const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+                if (isValid) {
                   setNewsletterSubmitted(true);
                   setNewsletterEmail('');
                 }
               }}>
-                <input 
-                  type="email" 
-                  placeholder="Enter your email address" 
+                <input
+                  type="email"
+                  placeholder="Enter your email address"
                   required
                   value={newsletterEmail}
                   onChange={(e) => setNewsletterEmail(e.target.value)}
                   style={{ flex: 1, padding: '16px 20px', border: 'none', fontSize: '0.9rem', borderRadius: '4px 0 0 4px', outline: 'none' }}
+                  aria-invalid={newsletterEmail.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(newsletterEmail.trim())}
                 />
                 <button type="submit" style={{ 
                   padding: '16px 32px', 

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { showToast } from '../../components/Toast';
+import { userService } from '../../services/userService';
+import { normalizeError } from '../../services/api';
 import { User, Mail, Phone, MapPin, Lock, Save, Eye, EyeOff, Shield } from 'lucide-react';
 
 export default function CustomerSettings() {
@@ -21,26 +23,41 @@ export default function CustomerSettings() {
 
   useEffect(() => { document.title = 'Account Settings - BSC Exclusive'; }, []);
 
-  const handleSaveProfile = () => {
-    if (!profile.name || !profile.email) {
+  const handleSaveProfile = async () => {
+    if (!profile.name?.trim() || !profile.email?.trim()) {
       showToast('error', 'Name and email are required');
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      localStorage.setItem('userProfile', JSON.stringify({
-        name: profile.name,
-        phone: profile.phone,
-        age: profile.age ? parseInt(profile.age) : undefined,
-        gender: profile.gender,
-        location: profile.location,
-      }));
-      setLoading(false);
+    try {
+      // Only send the fields the backend can actually persist (name/phone/bio).
+      // age/gender/location remain in localStorage as a write-through cache.
+      await userService.updateProfile({
+        name: profile.name.trim(),
+        phone: profile.phone?.trim() || undefined,
+      });
+      try {
+        localStorage.setItem('userProfile', JSON.stringify({
+          age: profile.age ? parseInt(profile.age, 10) : undefined,
+          gender: profile.gender,
+          location: profile.location,
+        }));
+      } catch {
+        /* storage may be full / unavailable */
+      }
       showToast('success', 'Profile updated successfully!');
-    }, 800);
+    } catch (err) {
+      const { message } = normalizeError(err);
+      showToast('error', message || 'Could not update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChangePassword = () => {
+    // TODO(integration): wire this to `userService.changePassword({ current, newPass })`
+    // once the change-password endpoint is implemented. For now, we still validate
+    // client-side and show a clear notice so the user isn't silently misled.
     if (!password.current || !password.newPass || !password.confirm) {
       showToast('error', 'Please fill all password fields');
       return;
@@ -53,12 +70,8 @@ export default function CustomerSettings() {
       showToast('error', 'Password must be at least 6 characters');
       return;
     }
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setPassword({ current: '', newPass: '', confirm: '' });
-      showToast('success', 'Password changed successfully!');
-    }, 800);
+    showToast('info', 'Change password is not yet connected to a backend. Please contact support.');
+    setPassword({ current: '', newPass: '', confirm: '' });
   };
 
   const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.85rem', fontFamily: 'inherit' };
@@ -145,7 +158,18 @@ export default function CustomerSettings() {
       <div style={{ background: '#fff', border: '1px solid #FEE2E2', borderRadius: '12px', padding: '28px' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#991B1B', marginBottom: '8px' }}>Danger Zone</h3>
         <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '16px' }}>Permanently delete your account and all associated data.</p>
-        <button style={{ padding: '10px 20px', background: '#FEE2E2', color: '#991B1B', border: '1px solid #FECDD3', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Delete Account</button>
+        <button
+          type="button"
+          onClick={() => {
+            // TODO(integration): replace with a real confirmation modal that
+            // requires the user to type "DELETE" and a password, then call
+            // `userService.deleteAccount()`. For now, show a clear notice.
+            showToast('info', 'Account deletion is not yet connected to a backend. Please contact support.');
+          }}
+          style={{ padding: '10px 20px', background: '#FEE2E2', color: '#991B1B', border: '1px solid #FECDD3', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+        >
+          Delete Account
+        </button>
       </div>
     </div>
   );

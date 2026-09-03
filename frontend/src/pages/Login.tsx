@@ -6,6 +6,18 @@ import BrandLogo from '../components/BrandLogo';
 import { showToast } from '../components/Toast';
 import './Login.css';
 
+// Open-redirect guard. Only allow same-origin paths starting with '/'. Reject
+// protocol-relative URLs ('//evil.com'), absolute URLs, and anything with a
+// different origin.
+const sanitizeRedirect = (raw: string | null): string => {
+  if (!raw) return '/';
+  // Must start with a single forward slash — rejects '//evil.com' and 'https://...'
+  if (!raw.startsWith('/') || raw.startsWith('//')) return '/';
+  // Defensive: don't allow CR/LF which could break headers.
+  if (/[\r\n]/.test(raw)) return '/';
+  return raw;
+};
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +29,7 @@ export default function Login() {
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
+  const redirectTo = sanitizeRedirect(searchParams.get('redirect'));
 
   useEffect(() => {
     document.title = 'Sign In - BSC Exclusive';

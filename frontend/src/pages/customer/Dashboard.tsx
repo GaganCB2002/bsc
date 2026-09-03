@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { Package, Heart, MapPin, Settings, ShoppingBag, ChevronRight, CreditCard, Truck, Clock, Camera, Upload, X } from 'lucide-react';
+import { showToast } from '../../components/Toast';
+import { Package, Heart, MapPin, Settings, ShoppingBag, ChevronRight, CreditCard, Truck, Clock, Camera, Upload, X, AlertCircle } from 'lucide-react';
 
 interface UploadedImage {
   id: string;
@@ -25,6 +26,10 @@ export default function CustomerDashboard() {
   const { user } = useAuth();
   const { totalItems } = useCart();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Mounted ref + timer ref so the upload "uploading" indicator cannot fire
+  // setState on an unmounted component when the user navigates away mid-upload.
+  const uploadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>(() => {
     try {
       const saved = localStorage.getItem('customerGallery');
@@ -35,19 +40,33 @@ export default function CustomerDashboard() {
   const [uploadCaption, setUploadCaption] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [orders] = useState<Order[]>([
-    { id: 'BSC-M1K8X2-A7B3C', date: 'Sep 1, 2026', status: 'Delivered', amount: '₹4,599', items: 'Kanchipuram Silk Saree', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100&h=100&fit=crop' },
-    { id: 'BSC-L2J9Y3-D4E5F', date: 'Aug 28, 2026', status: 'Shipped', amount: '₹2,899', items: 'Banarasi Silk Dupatta', image: 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=100&h=100&fit=crop' },
-    { id: 'BSC-K3H7Z1-G6H8I', date: 'Aug 20, 2026', status: 'Processing', amount: '₹6,299', items: 'Mysore Silk Saree', image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=100&h=100&fit=crop' },
-  ]);
+  const [orders] = useState<Order[]>([]);
+  // TODO(integration): replace with `orderService.recent()` call. Hardcoded
+  // demo orders are removed because they leaked across users and gave a false
+  // impression of purchase history.
 
-  useEffect(() => { document.title = 'My Account - BSC Exclusive'; }, []);
+  useEffect(() => {
+    document.title = 'My Account - BSC Exclusive';
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (uploadTimerRef.current) clearTimeout(uploadTimerRef.current);
+    };
+  }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('File size must be under 5MB'); return; }
-    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('error', 'File size must be under 5MB');
+      e.target.value = '';
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Please select an image file');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => { setUploadPreview(ev.target?.result as string); setShowUploadModal(true); };
     reader.readAsDataURL(file);
@@ -57,7 +76,9 @@ export default function CustomerDashboard() {
   const handleUpload = () => {
     if (!uploadPreview) return;
     setUploading(true);
-    setTimeout(() => {
+    if (uploadTimerRef.current) clearTimeout(uploadTimerRef.current);
+    uploadTimerRef.current = setTimeout(() => {
+      if (!isMountedRef.current) return;
       const newImage: UploadedImage = {
         id: `img-${Date.now()}`,
         name: `Photo ${uploadedImages.length + 1}`,
@@ -67,7 +88,11 @@ export default function CustomerDashboard() {
       };
       const updated = [newImage, ...uploadedImages];
       setUploadedImages(updated);
-      localStorage.setItem('customerGallery', JSON.stringify(updated));
+      try {
+        localStorage.setItem('customerGallery', JSON.stringify(updated));
+      } catch {
+        // localStorage may be full / unavailable; the in-memory state is still updated.
+      }
       setUploadPreview(null);
       setUploadCaption('');
       setShowUploadModal(false);
@@ -78,7 +103,11 @@ export default function CustomerDashboard() {
   const handleDeleteImage = (id: string) => {
     const updated = uploadedImages.filter(img => img.id !== id);
     setUploadedImages(updated);
-    localStorage.setItem('customerGallery', JSON.stringify(updated));
+    try {
+      localStorage.setItem('customerGallery', JSON.stringify(updated));
+    } catch {
+      // localStorage may be full / unavailable; in-memory state already updated.
+    }
   };
 
   const firstName = (user?.name || 'Customer').split(' ')[0];
@@ -152,26 +181,36 @@ export default function CustomerDashboard() {
           <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1A1A2E' }}>Recent Orders</h2>
           <Link to="/dashboard/orders" style={{ color: '#B91C1C', fontSize: '0.8rem', fontWeight: 600 }}>View All →</Link>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {orders.map((order) => {
-            const sc = statusColor(order.status);
-            return (
-              <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#fff', border: '1px solid #F0EBE5', padding: '16px 20px', borderRadius: '10px' }}>
-                <img src={order.image} alt="" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1A1A1A' }}>{order.items}</div>
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', color: '#6B6B6B', marginTop: '4px' }}>
-                    <span style={{ fontFamily: 'monospace' }}>{order.id}</span>
-                    <span>{order.date}</span>
+        {orders.length === 0 ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff', border: '1px solid #F0EBE5', padding: '24px', borderRadius: '10px', color: '#64748B' }}>
+            <AlertCircle size={20} color="#94A3B8" />
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B' }}>No orders yet</div>
+              <div style={{ fontSize: '0.8rem' }}>Recent orders will appear here once you make a purchase.</div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {orders.map((order) => {
+              const sc = statusColor(order.status);
+              return (
+                <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#fff', border: '1px solid #F0EBE5', padding: '16px 20px', borderRadius: '10px' }}>
+                  <img src={order.image} alt="" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1A1A1A' }}>{order.items}</div>
+                    <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', color: '#6B6B6B', marginTop: '4px' }}>
+                      <span style={{ fontFamily: 'monospace' }}>{order.id}</span>
+                      <span>{order.date}</span>
+                    </div>
                   </div>
+                  <div style={{ fontWeight: 700, color: '#1A1A1A', fontSize: '0.95rem' }}>{order.amount}</div>
+                  <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600, background: sc.bg, color: sc.color }}>{order.status}</span>
+                  <ChevronRight size={18} color="#ccc" />
                 </div>
-                <div style={{ fontWeight: 700, color: '#1A1A1A', fontSize: '0.95rem' }}>{order.amount}</div>
-                <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600, background: sc.bg, color: sc.color }}>{order.status}</span>
-                <ChevronRight size={18} color="#ccc" />
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* My Gallery - Image Upload */}

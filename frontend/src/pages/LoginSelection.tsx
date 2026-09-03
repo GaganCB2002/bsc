@@ -130,7 +130,7 @@ export default function LoginSelection() {
                 <p style={{ fontSize: '0.88rem', color: '#8A7A6A', lineHeight: 1.7, marginBottom: '28px', flex: 1 }}>
                   Track your orders, manage your wishlist, and update your shipping details.
                 </p>
-                <Link to="/customer" onClick={() => localStorage.setItem('role', 'customer')} style={{
+                <Link to="/customer" onClick={() => localStorage.setItem('intendedRole', 'customer')} style={{
                   display: 'block',
                   width: '100%',
                   padding: '14px',
@@ -195,7 +195,7 @@ export default function LoginSelection() {
                 <p style={{ fontSize: '0.88rem', color: '#8A7A6A', lineHeight: 1.7, marginBottom: '28px', flex: 1 }}>
                   Access the administrative dashboard to manage inventory, orders, and analytics.
                 </p>
-                <Link to="/admin" onClick={() => localStorage.setItem('role', 'admin')} style={{
+                <Link to="/admin" onClick={() => localStorage.setItem('intendedRole', 'admin')} style={{
                   display: 'block',
                   width: '100%',
                   padding: '14px',

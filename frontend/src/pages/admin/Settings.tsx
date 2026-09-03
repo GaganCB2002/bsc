@@ -5,17 +5,26 @@ import { showToast } from '../../components/Toast';
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
+  const [devToolsProtection, setDevToolsProtection] = useState(() => {
+    try {
+      const stored = localStorage.getItem('devToolsProtection');
+      return stored !== null ? JSON.parse(stored) : true;
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => {
     document.title = 'Settings - BSC Exclusive Admin';
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // TODO(integration): wire to a real admin settings endpoint
+    // (e.g. PUT /admin/settings). Until that endpoint exists we surface an
+    // explicit error so the UI does not silently pretend to persist values.
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      showToast('success', 'Settings saved successfully!');
-    }, 800);
+    showToast('info', 'Settings cannot be saved yet — backend endpoint not implemented');
+    setLoading(false);
   };
 
   const tabs = [
@@ -172,10 +181,53 @@ export default function Settings() {
             </div>
           )}
 
-          {(activeTab === 'notifications' || activeTab === 'security') && (
+          {activeTab === 'notifications' && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', flexDirection: 'column', gap: '16px', color: '#94A3B8' }}>
               <SettingsIcon size={48} opacity={0.3} />
               <p>These settings are currently managed through external services.</p>
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '24px' }}>
+              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', background: '#FEE2E2', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B91C1C' }}>
+                      <Shield size={20} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1A1A2E' }}>Developer Tools Protection</h3>
+                      <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '2px' }}>Block F12, right-click, and inspect element on the storefront to protect code and assets.</p>
+                    </div>
+                  </div>
+                  <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={devToolsProtection}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setDevToolsProtection(val);
+                        localStorage.setItem('devToolsProtection', JSON.stringify(val));
+                        window.dispatchEvent(new CustomEvent('devToolsProtectionChanged', { detail: val }));
+                      }}
+                      style={{ opacity: 0, width: 0, height: 0 }} 
+                    />
+                    <span style={{
+                      position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, 
+                      backgroundColor: devToolsProtection ? '#16A34A' : '#CBD5E1', 
+                      transition: '.4s', borderRadius: '24px'
+                    }}>
+                      <span style={{
+                        position: 'absolute', content: '""', height: '18px', width: '18px', 
+                        left: devToolsProtection ? '28px' : '3px', bottom: '3px', 
+                        backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                      }} />
+                    </span>
+                  </label>
+                </div>
+              </div>
             </div>
           )}
 

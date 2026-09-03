@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import { getProductsByCategory, type Product } from '../data/mockProducts';
-import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { useTryOn } from '../context/TryOnContext';
+import { ChevronLeft, ChevronRight, SlidersHorizontal, Sparkles } from 'lucide-react';
 import '../pages/LandingPage.css';
 
 const PAGE_SIZE = 24;
@@ -15,6 +16,7 @@ export default function CategoryPage() {
   const [sortBy, setSortBy] = useState('default');
   const [priceRange, setPriceRange] = useState('all');
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const { openFittingRoom } = useTryOn();
 
   const filtered = allProducts.filter(p => {
     if (priceRange === 'under2k') return p.price < 2000;
@@ -35,13 +37,11 @@ export default function CategoryPage() {
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
   const safePage = Math.min(page, totalPages || 1);
   const paginated = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const [prevKey, setPrevKey] = useState(`${categoryId}-${sortBy}-${priceRange}`);
 
-  const currentKey = `${categoryId}-${sortBy}-${priceRange}`;
-  if (prevKey !== currentKey) {
-    setPrevKey(currentKey);
+  // Reset page to 1 when filters/category change
+  useEffect(() => {
     setPage(1);
-  }
+  }, [categoryId, sortBy, priceRange]);
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
@@ -60,7 +60,8 @@ export default function CategoryPage() {
     return () => observerRef.current?.disconnect();
   }, [paginated]);
 
-  useEffect(() => { document.title = `${categoryId === 'new-arrivals' ? 'New Arrivals' : categoryId === 'bestsellers' ? 'Bestsellers' : categoryId === 'sale' ? 'Sale' : categoryId.charAt(0).toUpperCase() + categoryId.slice(1)} - BSC Exclusive`; }, [categoryId]);
+  useEffect(() => {
+    document.title = `${categoryId === 'new-arrivals' ? 'New Arrivals' : categoryId === 'bestsellers' ? 'Bestsellers' : categoryId === 'sale' ? 'Sale' : categoryId.charAt(0).toUpperCase() + categoryId.slice(1)} - BSC Exclusive`; }, [categoryId]);
 
   const titleMap: Record<string, string> = {
     'women': "Women's Collection",
@@ -125,10 +126,19 @@ export default function CategoryPage() {
                     <span style={{ fontSize: '0.7rem', color: '#f59e0b' }}>{'★'.repeat(Math.floor(product.rating))}</span>
                     <span style={{ fontSize: '0.65rem', color: '#94A3B8' }}>({product.reviews})</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: product.virtualTryOn ? '8px' : 0 }}>
                     <span style={{ fontSize: '1rem', fontWeight: 700, color: '#B91C1C' }}>₹{product.price.toLocaleString('en-IN')}</span>
                     {product.comparePrice && <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through' }}>₹{product.comparePrice.toLocaleString('en-IN')}</span>}
                   </div>
+                  {product.virtualTryOn && (
+                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); openFittingRoom(product.id, product.name, product.image, product.price); }} style={{
+                      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                      padding: '7px', background: '#fff', color: '#B91C1C', border: '1px solid #B91C1C',
+                      borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer',
+                    }}>
+                      <Sparkles size={12} /> Try On Virtually
+                    </button>
+                  )}
                 </div>
               </div>
             </Link>
@@ -140,7 +150,7 @@ export default function CategoryPage() {
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1} style={{ padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: safePage === 1 ? '#F1F5F9' : '#fff', cursor: safePage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem' }}>
               <ChevronLeft size={16} /> Prev
             </button>
-            {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+            {Array.from({ length: totalPages <= 7 ? totalPages : 7 }, (_, i) => {
               let pageNum: number;
               if (totalPages <= 7) {
                 pageNum = i + 1;

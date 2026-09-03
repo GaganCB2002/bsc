@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useCurrency } from '../../context/CurrencyContext';
 import { Link } from 'react-router-dom';
-import { Package, Search, ChevronDown, ChevronUp, Truck, CheckCircle, Clock, XCircle, MapPin, ExternalLink } from 'lucide-react';
+import { Package, Search, ChevronDown, ChevronUp, Truck, CheckCircle, Clock, XCircle, MapPin, ExternalLink, AlertCircle } from 'lucide-react';
 
 interface OrderItem {
   id: string;
@@ -22,48 +23,22 @@ interface Order {
   tracking?: string;
 }
 
-const ORDERS: Order[] = [
-  {
-    paymentId: 'BSC-M1K8X2-A7B3C', date: 'Sep 1, 2026', status: 'Delivered', payment: 'Paid', total: '₹4,599',
-    address: '123 Main St, Davangere, Karnataka 577001',
-    tracking: 'DELivered',
-    items: [
-      { id: '1', name: 'Kanchipuram Pure Silk Saree', size: 'Free Size', price: 4599, quantity: 1, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100&h=100&fit=crop' },
-    ],
-  },
-  {
-    paymentId: 'BSC-L2J9Y3-D4E5F', date: 'Aug 28, 2026', status: 'Shipped', payment: 'Paid', total: '₹2,899',
-    address: '456 Gandhi Rd, Belgaum, Karnataka 590001',
-    tracking: 'IN-transit',
-    items: [
-      { id: '2', name: 'Banarasi Silk Dupatta', size: '2.5m', price: 2899, quantity: 1, image: 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=100&h=100&fit=crop' },
-    ],
-  },
-  {
-    paymentId: 'BSC-K3H7Z1-G6H8I', date: 'Aug 20, 2026', status: 'Processing', payment: 'Paid', total: '₹6,299',
-    address: '789 MG Road, Shivamogga, Karnataka 577201',
-    items: [
-      { id: '3', name: 'Mysore Pure Silk Saree', size: 'Free Size', price: 6299, quantity: 1, image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=100&h=100&fit=crop' },
-    ],
-  },
-  {
-    paymentId: 'BSC-J4G6W5-M8N0P', date: 'Aug 15, 2026', status: 'Delivered', payment: 'Paid', total: '₹3,499',
-    address: '123 Main St, Davangere, Karnataka 577001',
-    items: [
-      { id: '4', name: 'Tussar Silk Stole', size: '1.8m', price: 3499, quantity: 1, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100&h=100&fit=crop' },
-    ],
-  },
-];
-
 export default function CustomerOrders() {
+  const { formatPrice } = useCurrency();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  // TODO(integration): populate via `orderService.list()` once the orders backend
+  // is implemented. Until then, render an explicit empty state.
+  const [orders] = useState<Order[]>([]);
+  const [loading] = useState(false);
 
   useEffect(() => { document.title = 'Order History - BSC Exclusive'; }, []);
 
-  const filtered = ORDERS.filter(o => {
-    const matchSearch = o.paymentId.toLowerCase().includes(searchTerm.toLowerCase()) || o.items.some(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filtered = orders.filter((o) => {
+    const matchSearch =
+      o.paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.items.some((i) => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchStatus = filterStatus === 'all' || o.status.toLowerCase() === filterStatus;
     return matchSearch && matchStatus;
   });
@@ -105,25 +80,33 @@ export default function CustomerOrders() {
         </select>
       </div>
 
-      {filtered.length === 0 ? (
+      {!loading && orders.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', border: '1px solid #F0EBE5', borderRadius: '12px' }}>
+          <AlertCircle size={48} color="#f59e0b" style={{ margin: '0 auto 12px' }} />
+          <h2 style={{ fontSize: '1.2rem', color: '#1E293B', marginBottom: '8px' }}>Order history not connected</h2>
+          <p style={{ color: '#64748B', marginBottom: '16px', maxWidth: '480px', margin: '0 auto 16px' }}>
+            Your order history will appear here once the orders backend is implemented. Until then, this is a placeholder.
+          </p>
+          <Link to="/category/new-arrivals" style={{ display: 'inline-block', padding: '10px 24px', background: '#B91C1C', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: 600 }}>Start Shopping</Link>
+        </div>
+      ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', border: '1px solid #F0EBE5', borderRadius: '12px' }}>
           <Package size={48} style={{ color: '#ddd', margin: '0 auto 12px' }} />
-          <p style={{ color: '#999', marginBottom: '16px' }}>No orders found</p>
-          <Link to="/category/new-arrivals" style={{ display: 'inline-block', padding: '10px 24px', background: '#B91C1C', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: 600 }}>Start Shopping</Link>
+          <p style={{ color: '#999', marginBottom: '16px' }}>No orders match your filters</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filtered.map((order) => {
             const sc = statusColor(order.status);
             const isExpanded = expandedOrder === order.paymentId;
+            const firstItem = order.items[0];
+            if (!firstItem) return null;
             return (
               <div key={order.paymentId} style={{ background: '#fff', border: '1px solid #F0EBE5', borderRadius: '12px', overflow: 'hidden' }}>
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px' }}
-                >
-                  <img src={order.items[0].image} alt="" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px' }}>
+                  <img src={firstItem.image} alt="" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1A1A1A' }}>{order.items[0].name}{order.items.length > 1 ? ` +${order.items.length - 1} more` : ''}</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1A1A1A' }}>{firstItem.name}{order.items.length > 1 ? ` +${order.items.length - 1} more` : ''}</div>
                     <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', color: '#6B6B6B', marginTop: '4px' }}>
                       <span style={{ fontFamily: 'monospace' }}>{order.paymentId}</span>
                       <span>{order.date}</span>
@@ -140,22 +123,13 @@ export default function CustomerOrders() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <Link
                         to={`/dashboard/orders/${order.paymentId}`}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 14px',
-                          background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '8px',
-                          fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', cursor: 'pointer',
-                          whiteSpace: 'nowrap', fontFamily: 'inherit'
-                        }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 14px', background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}
                       >
                         View Order <ExternalLink size={12} />
                       </Link>
                       <button
                         onClick={() => setExpandedOrder(isExpanded ? null : order.paymentId)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 14px',
-                          background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: '8px',
-                          fontSize: '0.7rem', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit'
-                        }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 14px', background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '0.7rem', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}
                       >
                         {isExpanded ? 'Less' : 'Quick View'} {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                       </button>
@@ -174,7 +148,7 @@ export default function CustomerOrders() {
                             <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{item.name}</div>
                             <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Size: {item.size} · Qty: {item.quantity}</div>
                           </div>
-                          <div style={{ fontWeight: 600 }}>₹{item.price.toLocaleString('en-IN')}</div>
+                          <div style={{ fontWeight: 600 }}>{formatPrice(item.price)}</div>
                         </div>
                       ))}
                     </div>
@@ -185,7 +159,7 @@ export default function CustomerOrders() {
                       </div>
                       <div style={{ padding: '12px', background: '#F8FAFC', borderRadius: '8px' }}>
                         <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748B', marginBottom: '4px', textTransform: 'uppercase' }}>Payment</div>
-                        <div style={{ fontSize: '0.8rem', color: '#1A1A2E' }}>Method: UPI · Status: <span style={{ color: order.payment === 'Paid' ? '#16a34a' : '#ef4444', fontWeight: 600 }}>{order.payment}</span></div>
+                        <div style={{ fontSize: '0.8rem', color: '#1A1A2E' }}>Status: <span style={{ color: order.payment === 'Paid' ? '#16a34a' : '#ef4444', fontWeight: 600 }}>{order.payment}</span></div>
                       </div>
                     </div>
                   </div>
@@ -198,3 +172,4 @@ export default function CustomerOrders() {
     </div>
   );
 }
+

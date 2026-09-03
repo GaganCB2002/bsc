@@ -3,12 +3,21 @@ import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Tag, Package, ShoppingCart, 
   Users, Megaphone, LineChart, Settings, 
-  Shield, HelpCircle, LogOut, Search, Bell, Menu, X, Ticket, Box
+  Shield, HelpCircle, LogOut, Search, Bell, Menu, X, Ticket, Box, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import DevToolsDetector from '../components/DevToolsDetector';
 import './AdminLayout.css';
 
 export default function AdminLayout() {
+  const [devToolsProtection, setDevToolsProtection] = useState(() => {
+    try {
+      const stored = localStorage.getItem('devToolsProtection');
+      return stored !== null ? JSON.parse(stored) : true;
+    } catch {
+      return true;
+    }
+  });
   const [showNotifications, setShowNotifications] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notifications, setNotifications] = useState([
@@ -21,7 +30,22 @@ export default function AdminLayout() {
 
   useEffect(() => {
     document.title = 'Admin Portal - BSC Exclusive';
-    
+
+    // Sync DevTools-detection toggle across tabs/admin users.
+    const handler = (e: StorageEvent) => {
+      if (e.key === 'devToolsProtection' && e.newValue !== null) {
+        try {
+          setDevToolsProtection(JSON.parse(e.newValue));
+        } catch {
+          /* ignore malformed values */
+        }
+      }
+    };
+    window.addEventListener('storage', handler);
+
+    // TODO(integration): replace fake "live" notifications with a real
+    // SSE/WebSocket connection to the admin events endpoint. Currently these
+    // notifications are hardcoded and add operator noise without any real data.
     const interval = setInterval(() => {
       const liveEvents = [
         { id: Date.now(), title: 'New Visitor', text: 'A new member is viewing Kanchipuram Silks from Mumbai.' },
@@ -32,8 +56,11 @@ export default function AdminLayout() {
       setNotifications(prev => [randomEvent, ...prev].slice(0, 6));
       setUnreadCount(prev => prev + 1);
     }, 12000);
-    return () => clearInterval(interval);
-  }, [navigate]);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handler);
+    };
+  }, []);
 
   const toggleNotifications = () => {
     setShowNotifications(!showNotifications);
@@ -47,6 +74,7 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-app">
+      <DevToolsDetector enabled={devToolsProtection} />
       <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="admin-brand" style={{ justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}>
           {!sidebarCollapsed && (
@@ -101,6 +129,10 @@ export default function AdminLayout() {
           <NavLink to="/admin/analytics" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'} title="Analytics">
             <span className="nav-icon"><LineChart size={20} /></span>
             {!sidebarCollapsed && <span>Analytics</span>}
+          </NavLink>
+          <NavLink to="/admin/try-on" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'} title="Virtual Try-On">
+            <span className="nav-icon"><Sparkles size={20} /></span>
+            {!sidebarCollapsed && <span>Virtual Try-On</span>}
           </NavLink>
           <NavLink to="/admin/settings" className={({ isActive }) => isActive ? 'admin-nav-item active' : 'admin-nav-item'} title="Settings">
             <span className="nav-icon"><Settings size={20} /></span>

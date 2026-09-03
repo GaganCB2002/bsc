@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { showToast } from '../components/Toast';
 import { CreditCard, Smartphone, QrCode, Banknote, ChevronRight, Check, Copy, ShieldCheck, Loader2, Tag, X, Ticket, Gift, Download, FileText } from 'lucide-react';
 
@@ -22,12 +23,12 @@ interface Coupon {
 
 const availableCoupons: Coupon[] = [
   { code: 'WELCOME20', type: 'percent', value: 20, minOrder: 1999, maxDiscount: 2000, description: '20% off for new customers', expires: 'Sep 30, 2026', active: true },
-  { code: 'BSC500', type: 'flat', value: 500, minOrder: 5000, description: 'Flat ₹500 off on orders above ₹5,000', expires: 'Oct 15, 2026', active: true },
+  { code: 'BSC500', type: 'flat', value: 500, minOrder: 5000, description: 'Flat {formatPrice(500)} off on orders above {formatPrice(5000)}', expires: 'Oct 15, 2026', active: true },
   { code: 'FESTIVE30', type: 'percent', value: 30, minOrder: 3000, maxDiscount: 5000, description: '30% off on festive collection', expires: 'Nov 30, 2026', active: true },
   { code: 'FREEDEL', type: 'freeship', value: 0, minOrder: 0, description: 'Free delivery on all orders', expires: 'Sep 15, 2026', active: true },
   { code: 'BRIDE10', type: 'percent', value: 10, minOrder: 10000, maxDiscount: 3000, description: '10% off on bridal collection', expires: 'Dec 31, 2026', active: true },
   { code: 'BSC2026', type: 'percent', value: 15, minOrder: 2500, maxDiscount: 3000, description: '15% off anniversary special', expires: 'Oct 31, 2026', active: true },
-  { code: 'FLAT1000', type: 'flat', value: 1000, minOrder: 8000, description: 'Flat ₹1000 off on orders above ₹8,000', expires: 'Nov 15, 2026', active: true },
+  { code: 'FLAT1000', type: 'flat', value: 1000, minOrder: 8000, description: 'Flat {formatPrice(1000)} off on orders above {formatPrice(8000)}', expires: 'Nov 15, 2026', active: true },
   { code: 'FIRSTRIDER', type: 'percent', value: 25, minOrder: 1500, maxDiscount: 1500, description: '25% off for first-time buyers', expires: 'Oct 31, 2026', active: true },
 ];
 
@@ -50,6 +51,7 @@ function generatePaymentId(): string {
 export default function CheckoutPage() {
   const { items, totalItems, totalPrice, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('razorpay');
   const [step, setStep] = useState<CheckoutStep>('payment');
@@ -73,7 +75,9 @@ export default function CheckoutPage() {
     })),
     []);
 
-  // Auto-apply best coupon on first render via lazy state init
+  // Lazy-init picks the best coupon for the current cart once.
+  // The toast is fired from a one-shot effect (not from inside the initializer,
+  // which must run synchronously and may run twice in StrictMode).
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(() => {
     let bestCoupon: Coupon | null = null;
     let bestDiscount = 0;
@@ -82,15 +86,20 @@ export default function CheckoutPage() {
       const disc = coupon.type === 'freeship' ? 99 : calculateDiscount(coupon, totalPrice);
       if (disc > bestDiscount) { bestDiscount = disc; bestCoupon = coupon; }
     }
-    if (bestCoupon) {
-      setTimeout(() => {
-        const disc = bestCoupon!.type === 'freeship' ? 0 : calculateDiscount(bestCoupon!, totalPrice);
-        if (disc > 0) showToast('success', `Auto-applied "${bestCoupon!.code}" — you save ₹${disc.toLocaleString('en-IN')}!`);
-        else showToast('success', `Auto-applied "FREEDEL" — Free delivery!`);
-      }, 300);
-    }
     return bestCoupon;
   });
+  const hasShownAutoApplyToastRef = useRef(false);
+
+  useEffect(() => {
+    if (hasShownAutoApplyToastRef.current || !appliedCoupon) return;
+    hasShownAutoApplyToastRef.current = true;
+    const t = setTimeout(() => {
+      const disc = appliedCoupon.type === 'freeship' ? 0 : calculateDiscount(appliedCoupon, totalPrice);
+      if (disc > 0) showToast('success', `Auto-applied "${appliedCoupon.code}" — you save ${formatPrice(disc)}!`);
+      else showToast('success', `Auto-applied "${appliedCoupon.code}" — Free delivery!`);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [appliedCoupon, totalPrice, formatPrice]);
 
   const shipping = totalPrice >= 5000 ? 0 : 99;
   const freeShippingFromCoupon = appliedCoupon?.type === 'freeship';
@@ -107,7 +116,7 @@ export default function CheckoutPage() {
     if (items.length === 0 && step !== 'success') {
       navigate('/cart');
     }
-  }, [isAuthenticated, items.length, navigate, step]);
+  }, [isAuthenticated, items.length, navigate, step, totalItems]);
 
   const handlePlaceOrder = () => {
     const id = generatePaymentId();
@@ -152,9 +161,18 @@ export default function CheckoutPage() {
   };
 
   const copyPaymentId = () => {
-    navigator.clipboard.writeText(paymentId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (!paymentId) return;
+    if (!navigator.clipboard) {
+      showToast('error', 'Clipboard not available in this browser');
+      return;
+    }
+    navigator.clipboard.writeText(paymentId).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => showToast('error', 'Failed to copy to clipboard'),
+    );
   };
 
   const handleApplyCoupon = () => {
@@ -163,14 +181,14 @@ export default function CheckoutPage() {
     const coupon = availableCoupons.find(c => c.code === code && c.active);
     if (!coupon) { showToast('error', 'Invalid coupon code'); return; }
     if (totalPrice < coupon.minOrder) {
-      showToast('error', `Minimum order ₹${coupon.minOrder.toLocaleString('en-IN')} required for "${code}"`);
+      showToast('error', `Minimum order ${formatPrice(coupon.minOrder)} required for "${code}"`);
       return;
     }
     setAppliedCoupon(coupon);
     setCouponInput('');
     setShowCouponList(false);
     const disc = coupon.type === 'freeship' ? 0 : calculateDiscount(coupon, totalPrice);
-    showToast('success', `Coupon "${code}" applied! ${coupon.type === 'freeship' ? 'Free delivery!' : `You save ₹${disc.toLocaleString('en-IN')}`}`);
+    showToast('success', `Coupon "${code}" applied! ${coupon.type === 'freeship' ? 'Free delivery!' : `You save ${formatPrice(disc)}`}`);
   };
 
   const handleRemoveCoupon = () => {
@@ -180,13 +198,13 @@ export default function CheckoutPage() {
 
   const handleSelectCoupon = (coupon: Coupon) => {
     if (totalPrice < coupon.minOrder) {
-      showToast('error', `Minimum order ₹${coupon.minOrder.toLocaleString('en-IN')} required`);
+      showToast('error', `Minimum order ${formatPrice(coupon.minOrder)} required`);
       return;
     }
     setAppliedCoupon(coupon);
     setShowCouponList(false);
     const disc = coupon.type === 'freeship' ? 0 : calculateDiscount(coupon, totalPrice);
-    showToast('success', `Coupon "${coupon.code}" applied! ${coupon.type === 'freeship' ? 'Free delivery!' : `You save ₹${disc.toLocaleString('en-IN')}`}`);
+    showToast('success', `Coupon "${coupon.code}" applied! ${coupon.type === 'freeship' ? 'Free delivery!' : `You save ${formatPrice(disc)}`}`);
   };
 
   if (items.length === 0 && step !== 'success') return null;
@@ -301,12 +319,12 @@ export default function CheckoutPage() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: '0.8rem', color: '#64748B' }}>Subtotal</span>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 500, color: '#1E293B' }}>₹{totalPrice.toLocaleString('en-IN')}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 500, color: '#1E293B' }}>{formatPrice(totalPrice)}</span>
                     </div>
                     {discount > 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '0.8rem', color: '#16a34a' }}>Discount ({appliedCoupon?.code})</span>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#16a34a' }}>-₹{discount.toLocaleString('en-IN')}</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#16a34a' }}>-{formatPrice(discount)}</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -319,7 +337,7 @@ export default function CheckoutPage() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', padding: '12px', background: '#FEF3C7', borderRadius: '10px' }}>
                     <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>Total Paid</span>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#B91C1C' }}>₹{total.toLocaleString('en-IN')}</span>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#B91C1C' }}>{formatPrice(total)}</span>
                   </div>
 
                   <div style={{ textAlign: 'center', marginTop: '20px', padding: '10px', background: '#F0FDF4', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
@@ -390,7 +408,16 @@ export default function CheckoutPage() {
                         <div style={{ flex: 1, padding: '12px 16px', background: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', fontFamily: 'monospace', fontSize: '1rem', fontWeight: 600, color: '#1A1A2E' }}>
                           bscexclusive@upi
                         </div>
-                        <button onClick={() => { navigator.clipboard.writeText('bscexclusive@upi'); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ padding: '10px', background: '#FEE2E2', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#B91C1C' }}>
+                        <button onClick={() => {
+                          if (navigator.clipboard) {
+                            navigator.clipboard.writeText('bscexclusive@upi').then(
+                              () => { setCopied(true); setTimeout(() => setCopied(false), 2000); },
+                              () => showToast('error', 'Failed to copy UPI ID'),
+                            );
+                          } else {
+                            showToast('error', 'Clipboard not available');
+                          }
+                        }} style={{ padding: '10px', background: '#FEE2E2', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#B91C1C' }}>
                           {copied ? <Check size={18} /> : <Copy size={18} />}
                         </button>
                       </div>
@@ -401,7 +428,7 @@ export default function CheckoutPage() {
                       </div>
                     )}
                     <div style={{ marginTop: '12px', padding: '10px 16px', background: '#FEF3C7', borderRadius: '8px', fontSize: '0.8rem', color: '#92400E', fontWeight: 500 }}>
-                      Pay exactly ₹{total.toLocaleString('en-IN')} — no more, no less
+                      Pay exactly {formatPrice(total)} — no more, no less
                     </div>
                   </div>
 
@@ -421,7 +448,7 @@ export default function CheckoutPage() {
               {selectedMethod === 'cod' && (
                 <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '10px', padding: '20px', marginBottom: '20px' }}>
                   <p style={{ fontSize: '0.85rem', color: '#92400E', fontWeight: 500 }}>
-                    You will pay ₹{total.toLocaleString('en-IN')} upon delivery. Please keep the exact change ready.
+                    You will pay {formatPrice(total)} upon delivery. Please keep the exact change ready.
                   </p>
                 </div>
               )}
@@ -446,12 +473,12 @@ export default function CheckoutPage() {
                 <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '4px' }}>Items: {totalItems}</div>
                 {discount > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#16A34A', marginBottom: '4px', fontWeight: 600 }}>
-                    <span>Coupon ({appliedCoupon?.code})</span><span>-₹{discount.toLocaleString('en-IN')}</span>
+                    <span>Coupon ({appliedCoupon?.code})</span><span>-{formatPrice(discount)}</span>
                   </div>
                 )}
                 <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px', marginTop: '12px', display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1A1A2E' }}>
                   <span>Total</span>
-                  <span style={{ color: '#B91C1C' }}>₹{total.toLocaleString('en-IN')}</span>
+                  <span style={{ color: '#B91C1C' }}>{formatPrice(total)}</span>
                 </div>
               </div>
             </div>
@@ -504,7 +531,7 @@ export default function CheckoutPage() {
               )}
 
               <button onClick={handlePlaceOrder} disabled={loading} style={{ width: '100%', padding: '14px', marginTop: '16px', background: '#B91C1C', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                {loading ? <><Loader2 size={18} className="spin" /> Processing...</> : <>Place Order — ₹{total.toLocaleString('en-IN')} <ChevronRight size={18} /></>}
+                {loading ? <><Loader2 size={18} className="spin" /> Processing...</> : <>Place Order — {formatPrice(total)} <ChevronRight size={18} /></>}
               </button>
             </div>
 
@@ -521,7 +548,7 @@ export default function CheckoutPage() {
                         <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#1A1A2E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                         <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>Qty: {item.quantity}</div>
                       </div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1A1A2E' }}>₹{(item.price * item.quantity).toLocaleString('en-IN')}</div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1A1A2E' }}>{formatPrice((item.price * item.quantity))}</div>
                     </div>
                   ))}
                 </div>
@@ -581,7 +608,7 @@ export default function CheckoutPage() {
                                 </div>
                                 <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{coupon.description}</div>
                                 <div style={{ fontSize: '0.65rem', color: '#94A3B8', marginTop: '2px' }}>
-                                  {!eligible ? `Min order ₹${coupon.minOrder.toLocaleString('en-IN')}` : `Expires ${coupon.expires}`}
+                                  {!eligible ? `Min order ${formatPrice(coupon.minOrder)}` : `Expires ${coupon.expires}`}
                                 </div>
                               </div>
                             );
@@ -594,14 +621,14 @@ export default function CheckoutPage() {
 
                 <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748B', marginBottom: '6px' }}>
-                    <span>Subtotal</span><span>₹{totalPrice.toLocaleString('en-IN')}</span>
+                    <span>Subtotal</span><span>{formatPrice(totalPrice)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748B', marginBottom: '6px' }}>
                     <span>Shipping</span><span>{effectiveShipping === 0 ? <span style={{ color: '#16A34A', fontWeight: 600 }}>Free</span> : `₹${shipping}`}</span>
                   </div>
                   {discount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#16A34A', marginBottom: '6px', fontWeight: 600 }}>
-                      <span>Coupon Discount</span><span>-₹{discount.toLocaleString('en-IN')}</span>
+                      <span>Coupon Discount</span><span>-{formatPrice(discount)}</span>
                     </div>
                   )}
                   {discount > 0 && (
@@ -610,11 +637,11 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 700, color: '#1A1A2E', marginTop: '8px', borderTop: '1px solid #E2E8F0', paddingTop: '8px' }}>
-                    <span>Total</span><span style={{ color: '#B91C1C' }}>₹{total.toLocaleString('en-IN')}</span>
+                    <span>Total</span><span style={{ color: '#B91C1C' }}>{formatPrice(total)}</span>
                   </div>
                   {discount > 0 && (
                     <div style={{ textAlign: 'center', marginTop: '8px', padding: '6px', background: '#FEF3C7', borderRadius: '6px', fontSize: '0.75rem', color: '#92400E', fontWeight: 600 }}>
-                      You are saving ₹{discount.toLocaleString('en-IN')} on this order!
+                      You are saving {formatPrice(discount)} on this order!
                     </div>
                   )}
                 </div>
@@ -678,3 +705,6 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+
+

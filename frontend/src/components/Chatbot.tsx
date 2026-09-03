@@ -30,6 +30,16 @@ export default function Chatbot() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageIdRef = useRef(1);
+  // Guard against setState-after-unmount when the user closes the chat
+  // mid-response (the Gemini call is awaited but can take seconds).
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,17 +68,32 @@ export default function Chatbot() {
     setInput('');
     setIsTyping(true);
 
-    const botResponse = await sendMessageToGemini(messageText);
-
-    const botMessage: Message = {
-      id: messageIdRef.current++,
-      text: botResponse,
-      sender: 'bot',
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, botMessage]);
-    setIsTyping(false);
+    try {
+      const botResponse = await sendMessageToGemini(messageText);
+      if (!isMountedRef.current) return;
+      const botMessage: Message = {
+        id: messageIdRef.current++,
+        text: botResponse,
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } catch (err) {
+      // sendMessageToGemini currently never throws (it has a built-in fallback),
+      // but defensively handle the case where a future refactor might.
+      if (import.meta.env.DEV) console.error('Chatbot send error:', err);
+      if (!isMountedRef.current) return;
+      const errMessage: Message = {
+        id: messageIdRef.current++,
+        text: 'Sorry, something went wrong. Please try again.',
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errMessage]);
+    } finally {
+      // ALWAYS clear the typing state — previously an error would leave it stuck on.
+      if (isMountedRef.current) setIsTyping(false);
+    }
   };
 
   return (

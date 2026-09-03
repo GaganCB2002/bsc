@@ -1,4 +1,8 @@
-const GEMINI_API_KEY = 'AIzaSyDwZIwJW3DH2zOITMzBv9YgZnDzmMpxfTc';
+// Prefer an environment-injected key (set VITE_GEMINI_API_KEY in .env.local).
+// SECURITY: No fallback key — if the env var is missing, the AI chat falls back
+// to the built-in smart-reply system. Hardcoding a key in the bundle is a leak:
+// anyone can extract it and abuse the quota.
+const GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY as string | undefined) || '';
 
 const SYSTEM_PROMPT = `You are BSC Exclusive's AI assistant for an Indian silk saree and ethnic wear store since 1938. You help customers with:
 - Product recommendations (silk sarees, kanchipuram, banarasi, ethnic wear)
@@ -16,6 +20,8 @@ const GEMINI_MODELS = [
 ];
 
 async function tryGeminiModels(): Promise<string> {
+  // If there's no API key, skip the network call entirely and return empty.
+  if (!GEMINI_API_KEY) return '';
   for (const model of GEMINI_MODELS) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
@@ -43,8 +49,11 @@ async function tryGeminiModels(): Promise<string> {
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        console.warn(`Gemini ${model} failed:`, response.status, errText);
+        // Don't log the response body in production (it can echo the prompt and key).
+        if (import.meta.env.DEV) {
+          const errText = await response.text();
+          console.warn(`Gemini ${model} failed:`, response.status, errText);
+        }
         continue;
       }
 
@@ -54,9 +63,10 @@ async function tryGeminiModels(): Promise<string> {
       if (reply && reply.trim().length > 0) {
         return reply.trim();
       }
-      console.warn(`Gemini ${model} returned empty response`);
     } catch (err) {
-      console.warn(`Gemini ${model} error:`, err);
+      if (import.meta.env.DEV) {
+        console.warn(`Gemini ${model} error:`, err);
+      }
     }
   }
   return '';
@@ -66,11 +76,8 @@ export async function sendMessageToGemini(message: string): Promise<string> {
   try {
     chatHistory.push({ role: 'user', parts: [{ text: message }] });
 
-    let reply = await tryGeminiModels();
-
-    if (!reply) {
-      reply = getSmartReply(message);
-    }
+    const geminiReply = await tryGeminiModels();
+    const reply = geminiReply || getSmartReply(message);
 
     chatHistory.push({ role: 'model', parts: [{ text: reply }] });
 
@@ -80,7 +87,7 @@ export async function sendMessageToGemini(message: string): Promise<string> {
 
     return reply;
   } catch (err) {
-    console.error('Gemini chat error:', err);
+    if (import.meta.env.DEV) console.error('Gemini chat error:', err);
     return getSmartReply(message);
   }
 }

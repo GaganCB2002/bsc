@@ -4,6 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, User, Phone, Loader2, MapPin, Calendar } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import { showToast } from '../components/Toast';
+import { getAgeRecommendation } from '../utils/ageRecommendations';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', phone: '', age: '', gender: '', location: '' });
@@ -14,7 +17,7 @@ export default function Register() {
   const navigate = useNavigate();
 
   useEffect(() => { document.title = 'Create Account - BSC Exclusive'; }, []);
-  useEffect(() => { 
+  useEffect(() => {
     if (isAuthenticated) {
       navigate(user?.role === 'admin' ? '/admin/overview' : '/', { replace: true });
     }
@@ -25,19 +28,15 @@ export default function Register() {
     setError('');
   };
 
-  const getAgeGroup = (age: number): string => {
-    if (age < 20) return 'Teens';
-    if (age >= 20 && age <= 30) return 'Young Adults';
-    if (age >= 31 && age <= 45) return 'Adults';
-    if (age >= 46 && age <= 60) return 'Mature Adults';
-    return 'Seniors';
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!form.name || !form.email || !form.password || !form.confirmPassword) {
       setError('Please fill in all required fields');
+      return;
+    }
+    if (!EMAIL_RE.test(form.email.trim())) {
+      setError('Please enter a valid email address');
       return;
     }
     if (!form.age || !form.gender) {
@@ -141,7 +140,7 @@ export default function Register() {
               {form.age && parseInt(form.age) >= 10 && parseInt(form.age) <= 100 && (
                 <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '0.8rem', color: '#166534' }}>
-                    Your age group: <strong>{getAgeGroup(parseInt(form.age))}</strong> — We'll show you personalized recommendations!
+                    Your age group: <strong>{getAgeRecommendation(parseInt(form.age)).label}</strong> — We'll show you personalized recommendations!
                   </span>
                 </div>
               )}

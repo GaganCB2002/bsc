@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { useAuth } from '../context/AuthContext';
 import { ShoppingBag, Trash2, Plus, Minus, ChevronRight } from 'lucide-react';
 import './LandingPage.css';
@@ -9,6 +10,7 @@ import './LandingPage.css';
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function CartPage() {
                     <div style={{ flex: '1', minWidth: '140px' }}>
                       <Link to={`/product/${item.id}`} style={{ fontSize: '0.88rem', fontWeight: 500, color: '#1A1A2E', textDecoration: 'none' }}>{item.name}</Link>
                       <div style={{ fontSize: '0.75rem', color: '#8A7A6A', marginTop: '4px' }}>Size: {item.size}</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#B91C1C', marginTop: '6px' }}>₹{item.price.toLocaleString('en-IN')}</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#B91C1C', marginTop: '6px' }}>{formatPrice(item.price)}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button
@@ -88,7 +90,7 @@ export default function CartPage() {
                       </button>
                     </div>
                     <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1A1A2E', minWidth: '80px', textAlign: 'right' }}>
-                      ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                      {formatPrice((item.price * item.quantity))}
                     </div>
                     <button
                       onClick={() => removeFromCart(item.id, item.size)}
@@ -121,7 +123,7 @@ export default function CartPage() {
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#1A1A2E', marginBottom: '20px' }}>Order Summary</h3>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#8A7A6A', marginBottom: '12px' }}>
                   <span>Subtotal ({totalItems} item{totalItems > 1 ? 's' : ''})</span>
-                  <span>₹{totalPrice.toLocaleString('en-IN')}</span>
+                  <span>{formatPrice(totalPrice)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#8A7A6A', marginBottom: '12px' }}>
                   <span>Shipping</span>
@@ -129,7 +131,7 @@ export default function CartPage() {
                 </div>
                 <div style={{ borderTop: '1px solid #E8E0D6', paddingTop: '16px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: 700, color: '#1A1A2E' }}>
                   <span>Total</span>
-                  <span style={{ color: '#B91C1C' }}>₹{(totalPrice + (totalPrice >= 5000 ? 0 : 99)).toLocaleString('en-IN')}</span>
+                  <span style={{ color: '#B91C1C' }}>{formatPrice((totalPrice + (totalPrice >= 5000 ? 0 : 99)))}</span>
                 </div>
                 <button
                   onClick={() => {
@@ -162,3 +164,4 @@ export default function CartPage() {
     </div>
   );
 }
+

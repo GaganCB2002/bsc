@@ -42,10 +42,11 @@ export default function PublicHeader() {
           <Link to="/category/new-arrivals?search=1" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#333' }}><Search size={18} /></Link>
           
           <a
-            href="#"
-            onClick={handleWishlistClick}
+            href={isAuthenticated ? '/dashboard/wishlist' : '/login?redirect=/dashboard/wishlist'}
+            onClick={isAuthenticated ? undefined : handleWishlistClick}
             style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#333', textDecoration: 'none' }}
             title={isAuthenticated ? 'My Wishlist' : 'Login to view Wishlist'}
+            aria-label={isAuthenticated ? 'My Wishlist' : 'Login to view Wishlist'}
           >
             <Heart size={18} />
             {isAuthenticated && wishlistItems.length > 0 && (

@@ -1,7 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, Clock, XCircle, MapPin, Copy, Check, ArrowLeft, CreditCard, Calendar, Hash, Printer } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, XCircle, MapPin, Copy, Check, ArrowLeft, CreditCard, Calendar, Hash, Printer, AlertCircle } from 'lucide-react';
+import { useCurrency } from '../../context/CurrencyContext';
 import { useAuth } from '../../context/AuthContext';
+import { normalizeError } from '../../services/api';
+import { showToast } from '../../components/Toast';
+// TODO(integration): replace this with `import { orderService } from '../../services/orderService'`
+// and call `orderService.getById(id)` when the order backend is implemented.
+// For now we render an explicit empty state so users aren't shown fake data.
 
 interface OrderItem {
   id: string;
@@ -37,64 +43,73 @@ interface Order {
   estimatedDelivery: string;
 }
 
-const ALL_ORDERS: Order[] = [
-  {
-    paymentId: 'BSC-M1K8X2-A7B3C', date: 'Sep 1, 2026', status: 'Delivered', payment: 'Paid', paymentMethod: 'UPI',
-    total: '₹4,599', subtotal: '₹4,599', shipping: 'Free', discount: '₹0', couponCode: '',
-    estimatedDelivery: 'Sep 6, 2026',
-    address: { name: 'Gagan CB', phone: '+91 8192 272180', line1: '123 Main St, Near Bus Stand', city: 'Davangere', state: 'Karnataka', pincode: '577001' },
-    tracking: 'DELivered',
-    items: [
-      { id: '1', name: 'Kanchipuram Pure Silk Saree', size: 'Free Size', price: 4599, quantity: 1, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&h=200&fit=crop', category: 'Women' },
-    ],
-  },
-  {
-    paymentId: 'BSC-L2J9Y3-D4E5F', date: 'Aug 28, 2026', status: 'Shipped', payment: 'Paid', paymentMethod: 'Razorpay',
-    total: '₹2,899', subtotal: '₹2,899', shipping: 'Free', discount: '₹0', couponCode: '',
-    estimatedDelivery: 'Sep 3, 2026',
-    address: { name: 'Gagan CB', phone: '+91 8192 272180', line1: '456 Gandhi Rd, Near Market', city: 'Belgaum', state: 'Karnataka', pincode: '590001' },
-    tracking: 'IN-transit',
-    items: [
-      { id: '2', name: 'Banarasi Silk Dupatta', size: '2.5m', price: 2899, quantity: 1, image: 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=200&h=200&fit=crop', category: 'Women' },
-    ],
-  },
-  {
-    paymentId: 'BSC-K3H7Z1-G6H8I', date: 'Aug 20, 2026', status: 'Processing', payment: 'Paid', paymentMethod: 'COD',
-    total: '₹6,299', subtotal: '₹6,299', shipping: 'Free', discount: '₹0', couponCode: '',
-    estimatedDelivery: 'Aug 27, 2026',
-    address: { name: 'Gagan CB', phone: '+91 8192 272180', line1: '789 MG Road, Near Temple', city: 'Shivamogga', state: 'Karnataka', pincode: '577201' },
-    items: [
-      { id: '3', name: 'Mysore Pure Silk Saree', size: 'Free Size', price: 6299, quantity: 1, image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=200&h=200&fit=crop', category: 'Women' },
-    ],
-  },
-  {
-    paymentId: 'BSC-J4G6W5-M8N0P', date: 'Aug 15, 2026', status: 'Delivered', payment: 'Paid', paymentMethod: 'UPI',
-    total: '₹3,499', subtotal: '₹3,499', shipping: '₹99', discount: '₹99', couponCode: 'FREEDEL',
-    estimatedDelivery: 'Aug 20, 2026',
-    address: { name: 'Gagan CB', phone: '+91 8192 272180', line1: '123 Main St, Near Bus Stand', city: 'Davangere', state: 'Karnataka', pincode: '577001' },
-    items: [
-      { id: '4', name: 'Tussar Silk Stole', size: '1.8m', price: 3499, quantity: 1, image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&h=200&fit=crop', category: 'Women' },
-    ],
-  },
-];
-
 export default function OrderDetails() {
+  const { formatPrice } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState('');
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const order = useMemo(() => ALL_ORDERS.find(o => o.paymentId === id) || null, [id]);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    // TODO(integration): replace with `orderService.getById(id)`.
+    // The previous version rendered hardcoded demo data which leaked across users
+    // and is being phased out. Until the order backend is wired up, we render an
+    // explicit "not available" state.
+    setOrder(null);
+    setLoading(false);
+    return () => {
+      // Cancel any pending copy-feedback so it cannot fire setState after unmount.
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, [id, isAuthenticated, navigate]);
 
-  if (!isAuthenticated) {
-    navigate('/login');
-    return null;
+  if (!isAuthenticated) return null;
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748B' }}>
+        Loading order…
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <AlertCircle size={48} color="#f59e0b" style={{ margin: '0 auto 16px' }} />
+        <h2 style={{ fontSize: '1.3rem', color: '#1E293B', marginBottom: '8px' }}>Order details unavailable</h2>
+        <p style={{ color: '#64748B', marginBottom: '24px', maxWidth: '480px', margin: '0 auto 24px' }}>
+          The order lookup is not connected to a live backend yet. Once the orders API is implemented, your order history will appear here.
+        </p>
+        <Link to="/dashboard/orders" style={{ padding: '12px 24px', background: '#B91C1C', color: '#fff', textDecoration: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem' }}>Back to Orders</Link>
+      </div>
+    );
   }
 
   const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(field);
-    setTimeout(() => setCopied(''), 2000);
+    if (!navigator.clipboard) {
+      showToast('error', 'Clipboard not available in this browser');
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setCopied(field);
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = setTimeout(() => setCopied(''), 2000);
+      },
+      (err) => {
+        // Clipboard write can fail in non-secure contexts. Surface the error.
+        const { message } = normalizeError(err);
+        showToast('error', `Could not copy: ${message}`);
+      },
+    );
   };
 
   const statusIcon = (s: string) => {
@@ -112,17 +127,6 @@ export default function OrderDetails() {
     if (s === 'Cancelled') return { bg: '#FEE2E2', color: '#991B1B', border: '#FCA5A5' };
     return { bg: '#F1F5F9', color: '#64748B', border: '#CBD5E1' };
   };
-
-  if (!order) {
-    return (
-      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <Package size={48} color="#ddd" style={{ margin: '0 auto 16px' }} />
-        <h2 style={{ fontSize: '1.3rem', color: '#1E293B', marginBottom: '8px' }}>Order not found</h2>
-        <p style={{ color: '#94A3B8', marginBottom: '24px' }}>This order doesn't exist or you don't have access.</p>
-        <Link to="/dashboard/orders" style={{ padding: '12px 24px', background: '#B91C1C', color: '#fff', textDecoration: 'none', borderRadius: '8px', fontWeight: 600, fontSize: '0.85rem' }}>Back to Orders</Link>
-      </div>
-    );
-  }
 
   const sc = statusColor(order.status);
 
@@ -163,9 +167,7 @@ export default function OrderDetails() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', alignItems: 'start' }}>
-        {/* Left Column */}
         <div>
-          {/* Order Timeline */}
           <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', marginBottom: '20px' }}>Order Timeline</h3>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -191,7 +193,6 @@ export default function OrderDetails() {
             </div>
           </div>
 
-          {/* Items */}
           <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', marginBottom: '16px' }}>Items Ordered</h3>
             {order.items.map(item => (
@@ -206,14 +207,13 @@ export default function OrderDetails() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, fontSize: '1rem', color: '#B91C1C' }}>₹{item.price.toLocaleString('en-IN')}</div>
-                  {item.quantity > 1 && <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>₹{(item.price / item.quantity).toLocaleString('en-IN')} each</div>}
+                  <div style={{ fontWeight: 700, fontSize: '1rem', color: '#B91C1C' }}>{formatPrice(item.price)}</div>
+                  {item.quantity > 1 && <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{formatPrice((item.price / item.quantity))} each</div>}
                 </div>
               </Link>
             ))}
           </div>
 
-          {/* Delivery Address */}
           <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '28px', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <MapPin size={18} color="#B91C1C" /> Delivery Address
@@ -229,9 +229,7 @@ export default function OrderDetails() {
           </div>
         </div>
 
-        {/* Right Column */}
         <div>
-          {/* Payment Summary */}
           <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <CreditCard size={18} color="#B91C1C" /> Payment Summary
@@ -284,7 +282,6 @@ export default function OrderDetails() {
             </div>
           </div>
 
-          {/* Need Help */}
           <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1E293B', marginBottom: '8px' }}>Need Help?</h4>
             <p style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '12px' }}>Contact us for any queries about this order.</p>
@@ -297,3 +294,4 @@ export default function OrderDetails() {
     </div>
   );
 }
+

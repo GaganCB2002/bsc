@@ -4,21 +4,26 @@ import PublicHeader from '../components/PublicHeader';
 import { getProductById, getProductsByCategory } from '../data/mockProducts';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+
+import { useTryOn } from '../context/TryOnContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { useAuth } from '../context/AuthContext';
-import { Truck, RotateCcw, ChevronLeft, ChevronRight, ShoppingBag, Star, Shield, Heart, ZoomIn, ZoomOut, Check, Package, Clock, Award } from 'lucide-react';
+import { Truck, RotateCcw, ChevronLeft, ChevronRight, ShoppingBag, Star, Shield, Heart, ZoomIn, ZoomOut, Check, Package, Clock, Award, Sparkles } from 'lucide-react';
 import '../pages/LandingPage.css';
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
   const product = getProductById(id || '');
-  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [isZoomed, setIsZoomed] = useState(false);
   const [addedMessage, setAddedMessage] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'details' | 'care' | 'shipping' | 'reviews'>('details');
   const [selectedImage, setSelectedImage] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { openFittingRoom } = useTryOn();
+  const { formatPrice } = useCurrency();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -43,6 +48,14 @@ export default function ProductDetails() {
   useEffect(() => {
     document.title = product ? `${product.name} - BSC Exclusive` : 'Product - BSC Exclusive';
   }, [product]);
+
+  // Auto-dismiss the "Added to cart!" message. Cleanup avoids setState after
+  // unmount when the user navigates away during the 2s window.
+  useEffect(() => {
+    if (!addedMessage || addedMessage === 'Please select a size') return;
+    const t = setTimeout(() => setAddedMessage(''), 2000);
+    return () => clearTimeout(t);
+  }, [addedMessage]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -245,21 +258,22 @@ export default function ProductDetails() {
               <span style={{ fontSize: '0.85rem', color: '#64748B' }}>{product.rating} ({product.reviews} reviews)</span>
               <span style={{ fontSize: '0.75rem', color: '#94A3B8', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px' }}>{product.subcategory}</span>
             </div>
-            
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#B91C1C', marginBottom: '8px' }}>
-              ₹{product.price.toLocaleString('en-IN')}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '2rem', fontWeight: 800, color: '#B91C1C' }}>
+                {formatPrice(product.price)}
+              </span>
               {product.comparePrice && (
                 <>
-                  <span style={{ fontSize: '1rem', color: '#94A3B8', textDecoration: 'line-through', marginLeft: '12px', fontWeight: 400 }}>
-                    ₹{product.comparePrice.toLocaleString('en-IN')}
+                  <span style={{ fontSize: '1.25rem', color: '#94A3B8', textDecoration: 'line-through' }}>
+                    {formatPrice(product.comparePrice)}
                   </span>
-                  <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 600, marginLeft: '8px' }}>
-                    Save ₹{(product.comparePrice - product.price).toLocaleString('en-IN')}
+                  <span style={{ fontSize: '0.9rem', color: '#16a34a', fontWeight: 600, background: '#dcfce7', padding: '4px 8px', borderRadius: '4px', marginLeft: '8px' }}>
+                    Save {formatPrice(product.comparePrice - product.price)}
                   </span>
                 </>
               )}
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '20px' }}>Inclusive of all taxes. Free shipping on orders above ₹5,000.</p>
+            <p style={{ fontSize: '0.75rem', color: '#94A3B8', marginBottom: '20px' }}>Inclusive of all taxes. Free shipping on orders above {formatPrice(5000)}.</p>
             
             <p style={{ fontSize: '0.95rem', color: '#64748B', lineHeight: 1.8, marginBottom: '24px' }}>{product.description}</p>
 
@@ -316,16 +330,22 @@ export default function ProductDetails() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button onClick={() => {
                   if (!selectedSize) { setAddedMessage('Please select a size'); return; }
-                  for (let i = 0; i < quantity; i++) {
-                    addToCart({ id: product.id, name: product.name, price: product.price, image: product.image, size: selectedSize });
-                  }
+                  addToCart({ id: product.id, name: product.name, price: product.price, image: product.image, size: selectedSize }, quantity);
                   setAddedMessage('Added to cart!');
-                  setTimeout(() => setAddedMessage(''), 2000);
                 }} style={{
                   flex: 1, padding: '16px', backgroundColor: '#B91C1C', color: '#fff', border: 'none', fontSize: '0.85rem',
                   fontWeight: 600, cursor: 'pointer', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                 }}>
                   <ShoppingBag size={18} /> Add to Cart
+                </button>
+                <button 
+                  onClick={() => openFittingRoom(product.id, product.name, product.image, product.price)}
+                  style={{
+                    flex: 1, padding: '16px', backgroundColor: '#fff', color: '#B91C1C', border: '1px solid #B91C1C', fontSize: '0.85rem',
+                    fontWeight: 600, cursor: 'pointer', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                  }}
+                >
+                  <Sparkles size={18} /> Virtual Try-On
                 </button>
                 <button onClick={() => {
                   if (!isAuthenticated) { navigate('/login'); return; }
@@ -507,8 +527,8 @@ export default function ProductDetails() {
                     <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>({p.reviews})</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                    <span style={{ fontWeight: 700, color: '#B91C1C' }}>₹{p.price.toLocaleString('en-IN')}</span>
-                    {p.comparePrice && <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through' }}>₹{p.comparePrice.toLocaleString('en-IN')}</span>}
+                    <span style={{ fontWeight: 700, color: '#B91C1C' }}>{formatPrice(p.price)}</span>
+                    {p.comparePrice && <span style={{ fontSize: '0.75rem', color: '#94A3B8', textDecoration: 'line-through' }}>{formatPrice(p.comparePrice)}</span>}
                   </div>
                 </div>
               </Link>
@@ -519,3 +539,4 @@ export default function ProductDetails() {
     </div>
   );
 }
+

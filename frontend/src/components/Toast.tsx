@@ -1,37 +1,68 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+
+type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface Toast {
   id: string;
-  type: 'success' | 'error' | 'info' | 'warning';
+  type: ToastType;
   message: string;
 }
 
-let addToastFn: ((type: Toast['type'], message: string) => void) | null = null;
+// A tiny event-bus so `showToast` works outside the React tree. The provider
+// subscribes; if no provider is mounted, calls are silently dropped.
+type Listener = (type: ToastType, message: string) => void;
+const listeners = new Set<Listener>();
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function showToast(type: Toast['type'], message: string) {
-  if (addToastFn) addToastFn(type, message);
+export function showToast(type: ToastType, message: string) {
+  listeners.forEach((l) => {
+    try {
+      l(type, message);
+    } catch {
+      /* don't let one bad listener break the rest */
+    }
+  });
 }
 
 export default function ToastContainer() {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // Track per-toast dismissal timers so we can clear them on unmount and avoid
+  // setState-after-unmount if the container is torn down mid-toast.
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  const addToast = useCallback((type: Toast['type'], message: string) => {
+  const addToast = useCallback((type: ToastType, message: string) => {
     const id = Date.now().toString() + Math.random().toString(36).slice(2);
     setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
+    const t = setTimeout(() => {
+      timersRef.current.delete(id);
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, 4000);
+    timersRef.current.set(id, t);
   }, []);
 
   useEffect(() => {
-    addToastFn = addToast;
-    return () => { addToastFn = null; };
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    listeners.add(addToast);
+    return () => {
+      listeners.delete(addToast);
+    };
   }, [addToast]);
 
   const removeToast = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    const t = timersRef.current.get(id);
+    if (t) {
+      clearTimeout(t);
+      timersRef.current.delete(id);
+    }
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
   const icons = {
@@ -42,10 +73,10 @@ export default function ToastContainer() {
   };
 
   const colors = {
-    success: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', icon: '#22c55e' },
-    error: { bg: '#fef2f2', border: '#fecaca', text: '#991b1b', icon: '#ef4444' },
-    info: { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af', icon: '#3b82f6' },
-    warning: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', icon: '#f59e0b' },
+    success: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', icon: '#22c55e' } as const,
+    error: { bg: '#fef2f2', border: '#fecaca', text: '#991b1b', icon: '#ef4444' } as const,
+    info: { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af', icon: '#3b82f6' } as const,
+    warning: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', icon: '#f59e0b' } as const,
   };
 
   if (toasts.length === 0) return null;
@@ -57,6 +88,8 @@ export default function ToastContainer() {
         return (
           <div
             key={toast.id}
+            role="status"
+            aria-live="polite"
             style={{
               display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px',
               backgroundColor: c.bg, border: `1px solid ${c.border}`, borderRadius: '8px',
@@ -66,7 +99,7 @@ export default function ToastContainer() {
           >
             <span style={{ color: c.icon, flexShrink: 0 }}>{icons[toast.type]}</span>
             <span style={{ flex: 1, fontSize: '0.875rem', color: c.text, fontWeight: 500 }}>{toast.message}</span>
-            <button onClick={() => removeToast(toast.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.text, opacity: 0.5, padding: 0 }}>
+            <button onClick={() => removeToast(toast.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.text, opacity: 0.5, padding: 0 }} aria-label="Dismiss notification">
               <X size={16} />
             </button>
           </div>

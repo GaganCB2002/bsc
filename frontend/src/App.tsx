@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import LandingPage from './pages/LandingPage';
+import ShopPage from './pages/ShopPage';
 import CategoryPage from './pages/CategoryPage';
 import ProductDetails from './pages/ProductDetails';
 import Login from './pages/Login';
@@ -28,6 +29,10 @@ import Settings from './pages/admin/Settings';
 import NewProduct from './pages/admin/NewProduct';
 import Coupons from './pages/admin/Coupons';
 import Products from './pages/admin/Products';
+import TryOnOverview from './pages/admin/TryOnOverview';
+import TryOnModels from './pages/admin/TryOnModels';
+import TryOnSettings from './pages/admin/TryOnSettings';
+import TryOnHistory from './pages/admin/TryOnHistory';
 
 import CustomerDashboard from './pages/customer/Dashboard';
 import CustomerOrders from './pages/customer/Orders';
@@ -38,6 +43,9 @@ import CustomerSettings from './pages/customer/Settings';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import ToastContainer from './components/Toast';
+import InteractiveFittingRoom from './components/InteractiveFittingRoom';
+import { CurrencyProvider } from './context/CurrencyContext';
+
 import DevToolsDetector from './components/DevToolsDetector';
 
 function NotFound() {
@@ -69,60 +77,74 @@ function App() {
       }
     };
     window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
+    // Also listen for custom events in case changes happen in same window
+    const customHandler = (e: CustomEvent) => setDevToolsProtection(e.detail);
+    window.addEventListener('devToolsProtectionChanged', customHandler as EventListener);
+    return () => {
+      window.removeEventListener('storage', handler);
+      window.removeEventListener('devToolsProtectionChanged', customHandler as EventListener);
+    };
   }, []);
 
   return (
-    <BrowserRouter>
-      <DevToolsDetector enabled={devToolsProtection} />
-      <ToastContainer />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/about" element={<LandingPage />} />
-        <Route path="/category/:id" element={<CategoryPage />} />
-        <Route path="/product/:id" element={<ProductDetails />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/customer-service" element={<CustomerService />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/cookies" element={<Cookies />} />
-        
-        {/* Legacy Customer Route (redirecting to home instead of dashboard) */}
-        <Route path="/customer" element={<Navigate to="/" replace />} />
-        
-        {/* Customer Dashboard Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
-          <Route index element={<CustomerDashboard />} />
-          <Route path="orders" element={<CustomerOrders />} />
-          <Route path="orders/:id" element={<OrderDetails />} />
-          <Route path="wishlist" element={<CustomerWishlist />} />
-          <Route path="addresses" element={<CustomerAddresses />} />
-          <Route path="settings" element={<CustomerSettings />} />
-        </Route>
-        
-        {/* Admin Routes */}
-        <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="/admin/overview" replace />} />
-          <Route path="overview" element={<Overview />} />
-          <Route path="products" element={<Products />} />
-          <Route path="catalog" element={<Catalog />} />
-          <Route path="inventory" element={<Inventory />} />
-          <Route path="roles" element={<UserRoles />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="marketing" element={<Marketing />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="coupons" element={<Coupons />} />
-          <Route path="products/new" element={<NewProduct />} />
-        </Route>
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <CurrencyProvider>
+      <BrowserRouter>
+        <DevToolsDetector enabled={devToolsProtection} />
+        <ToastContainer />
+        <InteractiveFittingRoom />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/about" element={<LandingPage />} />
+          <Route path="/category/:id" element={<CategoryPage />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/customer-service" element={<CustomerService />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/cookies" element={<Cookies />} />
+          
+          {/* Legacy Customer Route (redirecting to home instead of dashboard) */}
+          <Route path="/customer" element={<Navigate to="/" replace />} />
+          
+          {/* Customer Dashboard Routes */}
+          <Route path="/dashboard" element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
+            <Route index element={<CustomerDashboard />} />
+            <Route path="orders" element={<CustomerOrders />} />
+            <Route path="orders/:id" element={<OrderDetails />} />
+            <Route path="wishlist" element={<CustomerWishlist />} />
+            <Route path="addresses" element={<CustomerAddresses />} />
+            <Route path="settings" element={<CustomerSettings />} />
+          </Route>
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+            <Route index element={<Navigate to="/admin/overview" replace />} />
+            <Route path="overview" element={<Overview />} />
+            <Route path="products" element={<Products />} />
+            <Route path="catalog" element={<Catalog />} />
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="roles" element={<UserRoles />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="marketing" element={<Marketing />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="coupons" element={<Coupons />} />
+            <Route path="products/new" element={<NewProduct />} />
+            <Route path="try-on" element={<TryOnOverview />} />
+            <Route path="try-on/models" element={<TryOnModels />} />
+            <Route path="try-on/settings" element={<TryOnSettings />} />
+            <Route path="try-on/history" element={<TryOnHistory />} />
+          </Route>
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </CurrencyProvider>
   );
 }
 

@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tag, Plus, Edit2, Trash2, Scissors, Copy, CheckCircle2 } from 'lucide-react';
+import { showToast } from '../../components/Toast';
 
 export default function Coupons() {
   const [copied, setCopied] = useState<string | null>(null);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     document.title = 'Coupons & Offers - BSC Exclusive Admin';
+    return () => {
+      // Clear any pending copy-feedback timeout on unmount.
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
   }, []);
 
   const coupons = [
@@ -16,9 +22,18 @@ export default function Coupons() {
   ];
 
   const handleCopy = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopied(code);
-    setTimeout(() => setCopied(null), 2000);
+    if (!navigator.clipboard) {
+      showToast('error', 'Clipboard not available in this browser');
+      return;
+    }
+    navigator.clipboard.writeText(code).then(
+      () => {
+        setCopied(code);
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = setTimeout(() => setCopied(null), 2000);
+      },
+      () => showToast('error', 'Failed to copy code'),
+    );
   };
 
   return (

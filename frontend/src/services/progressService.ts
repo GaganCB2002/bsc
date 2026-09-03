@@ -1,23 +1,39 @@
-import api from './api';
+import api, { normalizeError } from './api';
 
 export const progressService = {
   getProgress: async (courseId: string) => {
-    const res = await api.get(`/progress/${courseId}`);
-    return res.data;
+    try {
+      const res = await api.get(`/progress/${courseId}`);
+      return res.data;
+    } catch (err) {
+      throw normalizeError(err);
+    }
   },
 
   getAllProgress: async () => {
-    const res = await api.get('/progress');
-    return res.data;
+    try {
+      const res = await api.get('/progress');
+      return res.data;
+    } catch (err) {
+      throw normalizeError(err);
+    }
   },
 
   completeSection: async (sectionId: string) => {
-    const res = await api.post(`/progress/section/${sectionId}/complete`);
-    return res.data;
+    try {
+      const res = await api.post(`/progress/section/${sectionId}/complete`);
+      return res.data;
+    } catch (err) {
+      throw normalizeError(err);
+    }
   },
 
   updateProgress: async (courseId: string, data: { currentSection?: string }) => {
-    const res = await api.put(`/progress/${courseId}`, data);
-    return res.data;
+    try {
+      const res = await api.put(`/progress/${courseId}`, data);
+      return res.data;
+    } catch (err) {
+      throw normalizeError(err);
+    }
   },
 };

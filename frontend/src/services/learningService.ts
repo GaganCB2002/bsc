@@ -1,13 +1,21 @@
-import api from './api';
+import api, { normalizeError } from './api';
 
 export const learningService = {
   getLearningContent: async (courseId: string) => {
-    const res = await api.get(`/learning/${courseId}`);
-    return res.data;
+    try {
+      const res = await api.get(`/learning/${courseId}`);
+      return res.data;
+    } catch (err) {
+      throw normalizeError(err);
+    }
   },
 
   getSection: async (sectionId: string) => {
-    const res = await api.get(`/learning/section/${sectionId}`);
-    return res.data;
+    try {
+      const res = await api.get(`/learning/section/${sectionId}`);
+      return res.data;
+    } catch (err) {
+      throw normalizeError(err);
+    }
   },
 };

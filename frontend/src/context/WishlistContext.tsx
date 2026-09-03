@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 
 interface WishlistItem {
@@ -34,8 +34,23 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const userEmail = isAuthenticated && user ? user.email : '';
   const [items, setItems] = useState<WishlistItem[]>(() => userEmail ? getStoredWishlist(userEmail) : []);
 
+  // Reload the wishlist whenever the signed-in user changes
+  // (covers login/logout/switch-user without remounting the provider).
+  useEffect(() => {
+    setItems(userEmail ? getStoredWishlist(userEmail) : []);
+  }, [userEmail]);
+
   const persistWishlist = useCallback((email: string, newItems: WishlistItem[]) => {
-    localStorage.setItem(`wishlist_${email}`, JSON.stringify(newItems));
+    try {
+      localStorage.setItem(`wishlist_${email}`, JSON.stringify(newItems));
+    } catch {
+      // localStorage can throw on quota exceeded or in private-browsing mode.
+      // Surface as a toast so the user knows their wishlist is in-memory only.
+      // Lazy import avoids a circular dep risk.
+      import('../components/Toast').then(({ showToast }) =>
+        showToast('warning', 'Could not save wishlist — storage full or unavailable.')
+      ).catch(() => {});
+    }
   }, []);
 
   const addToWishlist = useCallback((item: WishlistItem): boolean => {

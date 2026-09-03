@@ -12,12 +12,22 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/bschannaba
 
 export default async function seedDatabase(exitOnComplete = true) {
   try {
+    // Refuse to wipe data in production under ANY circumstances. The seed script
+    // does a destructive deleteMany() on every collection — running it against a
+    // real production database is a guaranteed data-loss bug, whether or not
+    // exitOnComplete is set. Force an explicit opt-in via SEED_ALLOW_PRODUCTION.
+    if (process.env.NODE_ENV === 'production' && process.env.SEED_ALLOW_PRODUCTION !== '1') {
+      console.error('❌ Refusing to run seed in production. Set SEED_ALLOW_PRODUCTION=1 to override (not recommended).');
+      if (exitOnComplete) process.exit(1);
+      return;
+    }
+
     if (mongoose.connection.readyState !== 1) {
       await mongoose.connect(MONGO_URI);
       console.log('Connected to MongoDB for seeding...');
     }
 
-    // Clear existing data
+    // Clear existing data (DESTRUCTIVE — only safe in dev)
     await Promise.all([
       User.deleteMany({}),
       Course.deleteMany({}),

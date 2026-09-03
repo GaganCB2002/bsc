@@ -24,6 +24,7 @@ const faqData = [
 
 export default function CustomerService() {
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const hashScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showStores, setShowStores] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>('shipping');
 
@@ -34,12 +35,16 @@ export default function CustomerService() {
   useEffect(() => {
     if (window.location.hash) {
       const id = window.location.hash.replace('#', '');
-      setTimeout(() => {
+      // Defer so sections have time to mount before we expand/scroll.
+      hashScrollTimerRef.current = setTimeout(() => {
         setExpandedSection(id);
         const el = document.querySelector(window.location.hash);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 400);
     }
+    return () => {
+      if (hashScrollTimerRef.current) clearTimeout(hashScrollTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {

@@ -14,10 +14,10 @@ interface Address {
   isDefault: boolean;
 }
 
-const INITIAL: Address[] = [
-  { id: '1', name: 'Home', phone: '+91 8192 272180', line1: '123 Silk Board Layout', line2: 'Near Medical College', city: 'Davangere', state: 'Karnataka', pincode: '577001', isDefault: true },
-  { id: '2', name: 'Office', phone: '+91 8192 272180', line1: '456 Gandhi Road', line2: 'Tilakwadi', city: 'Belgaum', state: 'Karnataka', pincode: '590001', isDefault: false },
-];
+// TODO(integration): replace with a real /users/addresses endpoint. Until that
+// endpoint exists, the UI is empty by default — the user can add addresses
+// locally so the layout/flow is testable, but those addresses are not persisted.
+const INITIAL: Address[] = [];
 
 export default function CustomerAddresses() {
   const [addresses, setAddresses] = useState<Address[]>(INITIAL);

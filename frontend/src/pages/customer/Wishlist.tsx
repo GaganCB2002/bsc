@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
+import { useCurrency } from '../../context/CurrencyContext';
 import { showToast } from '../../components/Toast';
 import { Heart, ShoppingBag, Trash2, Eye, ChevronRight } from 'lucide-react';
 import { productsData, type Product } from '../../data/mockProducts';
@@ -9,6 +10,7 @@ import { productsData, type Product } from '../../data/mockProducts';
 export default function CustomerWishlist() {
   const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const { formatPrice } = useCurrency();
   const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => { document.title = 'Wishlist - BSC Exclusive'; }, []);
@@ -71,9 +73,9 @@ export default function CustomerWishlist() {
                 <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#B8A88A', fontWeight: 500 }}>{product.category}</span>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1A1A1A', margin: '4px 0 6px' }}>{product.name}</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#B91C1C' }}>₹{product.price.toLocaleString('en-IN')}</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#B91C1C' }}>{formatPrice(product.price)}</span>
                   {product.comparePrice && product.comparePrice > product.price && (
-                    <span style={{ fontSize: '0.8rem', color: '#94A3B8', textDecoration: 'line-through' }}>₹{product.comparePrice.toLocaleString('en-IN')}</span>
+                    <span style={{ fontSize: '0.8rem', color: '#94A3B8', textDecoration: 'line-through' }}>{formatPrice(product.comparePrice)}</span>
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
